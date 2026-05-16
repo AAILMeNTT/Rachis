@@ -1,0 +1,24 @@
+{
+    "$schema": "../gen/schemas/desktop-schema.json",
+    "identifier": "default",
+    "description": "Capability for the main window",
+    "windows": ["main"],
+    "permissions": [
+        "core:default",
+        "opener:default"
+    ],
+    "commands": {
+        "allow": [
+            "delete_flight",
+            "delete_rachis",
+            "get_flight",
+            "get_rachis",
+            "create_flight",
+            "create_rachis",
+            "list_rachises",
+            "parse_tag",
+            "update_flight",
+            "update_rachis"
+        ]
+    }
+}
