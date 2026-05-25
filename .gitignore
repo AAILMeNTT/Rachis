@@ -134,3 +134,4 @@ Cargo.lock
 
 ## Ignore my idiot obsidian vault of documents and notes to myself
 /meta
+pnpm-lock.yaml

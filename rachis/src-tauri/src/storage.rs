@@ -1,12 +1,12 @@
 use chrono::{DateTime, Utc};
-use rusqlite::{self};
+use rusqlite::{self, Connection, Error, Result, Row};
 use uuid::Uuid;
 
 use crate::domain::{Flight, Rachis, RachisType};
 
 #[derive(Debug)]
 pub struct Database {
-    conn: rusqlite::Connection,
+    conn: Connection,
 }
 
 impl Database {
@@ -18,12 +18,12 @@ impl Database {
     ///
     /// # Returns
     ///
-    /// * `rusqlite::Result<Database>` - The Database struct, or an error if the connection fails.
+    /// * `Result<Database>` - The Database struct, or an error if the connection fails.
     ///
     /// # Examples
     ///
     /// TODO: Generate examples for Database::open()
-    pub fn open(path: &str) -> rusqlite::Result<Self> {
+    pub fn open(path: &str) -> Result<Self> {
         let conn: rusqlite::Connection = rusqlite::Connection::open(path)?;
         conn.execute(
             "CREATE TABLE IF NOT EXISTS flight (
@@ -58,55 +58,49 @@ impl Database {
     ///
     /// # Returns
     ///
-    /// * `rusqlite::Result<Flight>` - The Flight struct, or an error if the query fails.
+    /// * `Result<Flight>` - The Flight struct, or an error if the query fails.
     ///
     /// # Examples
     ///
     /// TODO: Generate examples for Database::get_flight()
-    pub fn get_flight(&self) -> rusqlite::Result<Option<Flight>, rusqlite::Error> {
+    pub fn get_flight(&self) -> Result<Option<Flight>, Error> {
         let mut statement: rusqlite::CachedStatement<'_> = self
             .conn
             .prepare_cached("SELECT id, name, created_at, updated_at FROM flight LIMIT 1")?;
 
-        let flight: Result<Flight, rusqlite::Error> =
-            statement.query_row([], |row: &rusqlite::Row<'_>| {
-                // Get the values of each column
-                let id_str: String = row.get("id")?; // id
-                let name: String = row.get("name")?; // name
-                let created_at_timestamp: i64 = row.get("created_at")?; // created_at
-                let updated_at_timestamp: i64 = row.get("updated_at")?; // updated_at
+        let flight: Result<Flight, Error> = statement.query_row([], |row: &rusqlite::Row<'_>| {
+            // Get the values of each column
+            let id_str: String = row.get("id")?; // id
+            let name: String = row.get("name")?; // name
+            let created_at_timestamp: i64 = row.get("created_at")?; // created_at
+            let updated_at_timestamp: i64 = row.get("updated_at")?; // updated_at
 
-                // Convert to Uuid, returning a conversion error on failure
-                let id: Uuid = Uuid::parse_str(&id_str).map_err(|e: uuid::Error| {
-                    rusqlite::Error::ToSqlConversionFailure(Box::new(e))
+            // Convert to Uuid, returning a conversion error on failure
+            let id: Uuid = Uuid::parse_str(&id_str)
+                .map_err(|e: uuid::Error| Error::ToSqlConversionFailure(Box::new(e)))?;
+
+            // Convert to DateTime<Utc>, returning an invalid parameter error on failure
+            let created_at: DateTime<Utc> = DateTime::from_timestamp(created_at_timestamp, 0)
+                .ok_or_else(|| {
+                    Error::InvalidParameterName(String::from("Invalid created_at timestamp"))
+                })?;
+            let updated_at: DateTime<Utc> = DateTime::from_timestamp(updated_at_timestamp, 0)
+                .ok_or_else(|| {
+                    Error::InvalidParameterName(String::from("Invalid updated_at timestamp"))
                 })?;
 
-                // Convert to DateTime<Utc>, returning an invalid parameter error on failure
-                let created_at: DateTime<Utc> = DateTime::from_timestamp(created_at_timestamp, 0)
-                    .ok_or_else(|| {
-                    rusqlite::Error::InvalidParameterName(String::from(
-                        "Invalid created_at timestamp",
-                    ))
-                })?;
-                let updated_at: DateTime<Utc> = DateTime::from_timestamp(updated_at_timestamp, 0)
-                    .ok_or_else(|| {
-                    rusqlite::Error::InvalidParameterName(String::from(
-                        "Invalid updated_at timestamp",
-                    ))
-                })?;
-
-                // Return the Flight
-                Ok(Flight {
-                    id,
-                    name,
-                    created_at,
-                    updated_at,
-                })
-            });
+            // Return the Flight
+            Ok(Flight {
+                id,
+                name,
+                created_at,
+                updated_at,
+            })
+        });
 
         match flight {
             Ok(flight) => Ok(Some(flight)),
-            Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
+            Err(Error::QueryReturnedNoRows) => Ok(None),
             Err(e) => Err(e),
         }
     }
@@ -120,7 +114,7 @@ impl Database {
     /// # Examples
     ///
     /// TODO: Generate examples for Database::create_flight()
-    pub fn create_flight(&self, flight: &Flight) -> rusqlite::Result<(), rusqlite::Error> {
+    pub fn create_flight(&self, flight: &Flight) -> Result<(), Error> {
         let mut statement: rusqlite::CachedStatement<'_> = self.conn.prepare_cached(
             "INSERT INTO flight (id, name, created_at, updated_at) VALUES (?1, ?2, ?3, ?4)",
         )?;
@@ -144,11 +138,9 @@ impl Database {
     /// # Examples
     ///
     /// TODO: Generate examples for Database::update_flight()
-    pub fn update_flight(&self, flight: &Flight) -> rusqlite::Result<(), rusqlite::Error> {
+    pub fn update_flight(&self, flight: &Flight) -> Result<(), Error> {
         // Using the current flight as a sort of template
-        let curr_flight: Flight = self
-            .get_flight()?
-            .ok_or(rusqlite::Error::QueryReturnedNoRows)?;
+        let curr_flight: Flight = self.get_flight()?.ok_or(Error::QueryReturnedNoRows)?;
         // The "WHERE" here is technically not needed since there should only ever be one Flight per Database, but... trust no one
         let mut statement: rusqlite::CachedStatement<'_> = self
             .conn
@@ -174,7 +166,7 @@ impl Database {
     /// # Examples
     ///
     /// TODO: Generate examples for Database::delete_flight()
-    pub fn delete_flight(&self, id: &Uuid) -> rusqlite::Result<(), rusqlite::Error> {
+    pub fn delete_flight(&self, id: &Uuid) -> Result<(), Error> {
         let mut statement: rusqlite::CachedStatement<'_> = self
             .conn
             .prepare_cached("DELETE FROM flight WHERE id = ?1")?;
@@ -184,7 +176,7 @@ impl Database {
 
     // ———————— Rachis CRUD ————————
 
-    /// A helper function that queries a [Rachis] from a [rusqlite::Row].
+    /// A helper function that queries a [Rachis] from a [Row].
     ///
     /// # Arguments
     ///
@@ -216,26 +208,25 @@ impl Database {
         created_at_timestamp: i64,
         updated_at_timestamp: i64,
         word_count: i64,
-    ) -> Result<Rachis, rusqlite::Error> {
+    ) -> Result<Rachis, Error> {
         // Convert id and flight_id to Uuid, returning a conversion error on failure
         let id: Uuid = Uuid::parse_str(&id_str)
-            .map_err(|e: uuid::Error| rusqlite::Error::ToSqlConversionFailure(Box::new(e)))?;
+            .map_err(|e: uuid::Error| Error::ToSqlConversionFailure(Box::new(e)))?;
         let flight_id: Uuid = Uuid::parse_str(&flight_id_str)
-            .map_err(|e: uuid::Error| rusqlite::Error::ToSqlConversionFailure(Box::new(e)))?;
+            .map_err(|e: uuid::Error| Error::ToSqlConversionFailure(Box::new(e)))?;
 
         // Convert type_str to RachisType, returning an invalid parameter error if the conversion fails
-        let r#type: RachisType = RachisType::from_str(&type_str).map_err(|_| {
-            rusqlite::Error::InvalidParameterName(String::from("Invalid RachisType"))
-        })?;
+        let r#type: RachisType = RachisType::from_str(&type_str)
+            .map_err(|_| Error::InvalidParameterName(String::from("Invalid RachisType")))?;
 
         // Convert created_at and updated_at to DateTime<Utc>, returning an invalid parameter error if the conversion fails
         let created_at: DateTime<Utc> = DateTime::from_timestamp(created_at_timestamp, 0)
             .ok_or_else(|| {
-                rusqlite::Error::InvalidParameterName(String::from("Invalid created_at timestamp"))
+                Error::InvalidParameterName(String::from("Invalid created_at timestamp"))
             })?;
         let updated_at: DateTime<Utc> = DateTime::from_timestamp(updated_at_timestamp, 0)
             .ok_or_else(|| {
-                rusqlite::Error::InvalidParameterName(String::from("Invalid updated_at timestamp"))
+                Error::InvalidParameterName(String::from("Invalid updated_at timestamp"))
             })?;
 
         Ok(Rachis {
@@ -263,13 +254,13 @@ impl Database {
     ///
     /// # Examples
     ///
-    /// TODO: Generate examples for Database::get_rachis()
-    pub fn get_rachis(&self, id: &Uuid) -> rusqlite::Result<Option<Rachis>, rusqlite::Error> {
+    /// TODO: Generate examples for Database::get_rachis_by_id()
+    pub fn get_rachis_by_id(&self, id: &Uuid) -> Result<Option<Rachis>, Error> {
         let mut statement: rusqlite::CachedStatement<'_> = self
             .conn
             .prepare_cached("SELECT * FROM rachises WHERE id = ?1")?;
 
-        let result: Result<Rachis, rusqlite::Error> =
+        let result: Result<Rachis, Error> =
             statement.query_row(&[&id.to_string()], |row: &rusqlite::Row<'_>| {
                 Self::_query_row_rachis(
                     row.get("id")?,
@@ -286,24 +277,58 @@ impl Database {
 
         match result {
             Ok(rachis) => Ok(Some(rachis)),
-            Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
+            Err(Error::QueryReturnedNoRows) => Ok(None),
             Err(e) => Err(e),
         }
+    }
+
+    /// Returns a vector of [Rachises](Rachis) that match a given title.
+    ///
+    /// # Arguments
+    ///
+    /// * `title` - The title to search for.
+    ///
+    /// # Returns
+    ///
+    /// A vector of [Rachises](Rachis) that match the given title.
+    ///
+    /// # Examples
+    ///
+    /// TODO: Generate examples for Database::get_rachises_by_title()
+    pub fn get_rachises_by_title(&self, title: &str) -> Result<Vec<Rachis>, Error> {
+        let mut statement: rusqlite::CachedStatement<'_> = self
+            .conn
+            .prepare_cached("SELECT * FROM rachises WHERE title = ?1 ORDER BY created_at DESC")?;
+
+        let result = statement
+            .query_map(&[&title.to_string()], |row: &rusqlite::Row<'_>| {
+                Self::_query_row_rachis(
+                    row.get("id")?,
+                    row.get("flight_id")?,
+                    row.get("title")?,
+                    row.get("content")?,
+                    row.get("type")?,
+                    row.get("path")?,
+                    row.get("created_at")?,
+                    row.get("updated_at")?,
+                    row.get("word_count")?,
+                )
+            })?
+            .collect::<Result<Vec<Rachis>, Error>>()?;
+
+        Ok(result)
     }
 
     /// Lists all Rachises in the database ordered by their creation date in descending order.
     ///
     /// # Returns
     ///
-    /// * `Result<Vec<Rachis>, rusqlite::Error>` - Returns a vector of [Rachis] if successful, or an error if not.
+    /// * `Result<Vec<Rachis>, Error>` - Returns a vector of [Rachis] if successful, or an error if not.
     ///
     /// # Examples
     ///
     /// TODO: Generate examples for Database::list_rachises()
-    pub fn list_rachises(
-        &self,
-        r#type: Option<RachisType>,
-    ) -> rusqlite::Result<Vec<Rachis>, rusqlite::Error> {
+    pub fn list_rachises(&self, r#type: Option<RachisType>) -> Result<Vec<Rachis>, Error> {
         let mut statement: rusqlite::CachedStatement<'_> = self
             .conn
             .prepare_cached("SELECT * FROM rachises ORDER BY created_at DESC")?;
@@ -322,7 +347,7 @@ impl Database {
                     row.get("word_count")?,
                 )
             })?
-            .collect::<Result<Vec<Rachis>, rusqlite::Error>>()?;
+            .collect::<Result<Vec<Rachis>, Error>>()?;
 
         let rachises: Vec<Rachis> = match r#type {
             Some(rachis_type) => rachises
@@ -343,12 +368,12 @@ impl Database {
     ///
     /// # Returns
     ///
-    /// * `rusqlite::Result<(), rusqlite::Error>` - Returns Ok if successful, or an error if not.
+    /// * `Result<(), Error>` - Returns Ok if successful, or an error if not.
     ///
     /// # Examples
     ///
     /// TODO: Generate examples for Database::create_rachis()
-    pub fn create_rachis(&self, rachis: &Rachis) -> rusqlite::Result<(), rusqlite::Error> {
+    pub fn create_rachis(&self, rachis: &Rachis) -> Result<(), Error> {
         let mut statement: rusqlite::CachedStatement<'_> = self
             .conn
             .prepare_cached("INSERT INTO rachises (id, flight_id, title, content, type, path, created_at, updated_at, word_count) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)")?;
@@ -377,18 +402,14 @@ impl Database {
     ///
     /// # Returns
     ///
-    /// * `rusqlite::Result<(), rusqlite::Error>` - Returns Ok if successful, or an error if not.
+    /// * `Result<(), Error>` - Returns Ok if successful, or an error if not.
     ///
     /// # Examples
     ///
     /// TODO: Generate examples for Database::update_rachis()
-    pub fn update_rachis(
-        &self,
-        id: &Uuid,
-        new_rachis: &Rachis,
-    ) -> rusqlite::Result<(), rusqlite::Error> {
-        self.get_rachis(id)?
-            .ok_or(rusqlite::Error::QueryReturnedNoRows)?;
+    pub fn update_rachis(&self, id: &Uuid, new_rachis: &Rachis) -> Result<(), Error> {
+        self.get_rachis_by_id(id)?
+            .ok_or(Error::QueryReturnedNoRows)?;
 
         let mut statement: rusqlite::CachedStatement<'_> = self.conn.prepare_cached(
             "UPDATE rachises SET title = ?1, content = ?2, type = ?3, path = ?4, updated_at = ?5, word_count = ?6 WHERE id = ?7"
@@ -421,12 +442,12 @@ impl Database {
     ///
     /// # Returns
     ///
-    /// * `rusqlite::Result<(), rusqlite::Error>` - Returns Ok if successful, or an error if not.
+    /// * `Result<(), Error>` - Returns Ok if successful, or an error if not.
     ///
     /// # Examples
     ///
     /// TODO: Generate examples for Database::delete_rachis()
-    pub fn delete_rachis(&self, rachis_id: Uuid) -> rusqlite::Result<(), rusqlite::Error> {
+    pub fn delete_rachis(&self, rachis_id: Uuid) -> Result<(), Error> {
         let mut statement: rusqlite::CachedStatement<'_> = self
             .conn
             .prepare_cached("DELETE FROM rachises WHERE id = ?1")?;
@@ -443,14 +464,14 @@ mod tests {
 
     /// Tests the creation of a new [Database] connection.
     #[test]
-    fn test_new_connection() -> rusqlite::Result<(), rusqlite::Error> {
+    fn test_new_connection() -> Result<(), Error> {
         let _ = Database::open(":memory:")?;
         Ok(())
     }
 
     /// Tests a [Flight] round trip
     #[test]
-    fn test_flight_round_trip() -> rusqlite::Result<(), rusqlite::Error> {
+    fn test_flight_round_trip() -> Result<(), Error> {
         // Generate a new Database
         let db: Database = Database::open(":memory:")?;
         println!("Database: {:#?}", db);
@@ -464,9 +485,7 @@ mod tests {
         assert!(db.get_flight().is_ok());
 
         // Retrieve the Flight from the Database
-        let loaded_flight: Flight = db
-            .get_flight()?
-            .ok_or(rusqlite::Error::QueryReturnedNoRows)?;
+        let loaded_flight: Flight = db.get_flight()?.ok_or(Error::QueryReturnedNoRows)?;
         println!("Retrieved Flight: {:#?}", loaded_flight);
 
         // Assert that the retrieved Flight is the same as the original
@@ -486,7 +505,7 @@ mod tests {
 
     /// Tests a [Flight] update
     #[test]
-    fn test_flight_update() -> rusqlite::Result<(), rusqlite::Error> {
+    fn test_flight_update() -> Result<(), Error> {
         // Generate a new Database
         let db: Database = Database::open(":memory:")?;
         println!("Database: {:#?}", db);
@@ -500,9 +519,7 @@ mod tests {
         assert!(db.get_flight().is_ok());
 
         // Retrieve the Flight from the Database
-        let loaded_flight: Flight = db
-            .get_flight()?
-            .ok_or(rusqlite::Error::QueryReturnedNoRows)?;
+        let loaded_flight: Flight = db.get_flight()?.ok_or(Error::QueryReturnedNoRows)?;
         println!("Retrieved Flight: {:#?}", loaded_flight);
 
         // Assert that the retrieved Flight is the same as the original
@@ -527,9 +544,7 @@ mod tests {
         // Update the Flight data via the database
         db.update_flight(&new_flight)?;
         // Because this function only changes the data related to the Flight, I have to make sure that the actual Flight object itself reflects the database changes
-        let updated_flight: Flight = db
-            .get_flight()?
-            .ok_or(rusqlite::Error::QueryReturnedNoRows)?;
+        let updated_flight: Flight = db.get_flight()?.ok_or(Error::QueryReturnedNoRows)?;
 
         // Assert that the only fields that changed were the name and updated_at fields
         println!("Names: {} | {}", updated_flight.name, new_flight.name);
@@ -559,7 +574,7 @@ mod tests {
 
     /// Tests a [Flight] deletion
     #[test]
-    fn test_flight_deletion() -> rusqlite::Result<(), rusqlite::Error> {
+    fn test_flight_deletion() -> Result<(), Error> {
         // Generate a new Database
         let db: Database = Database::open(":memory:")?;
         println!("Database: {:#?}", db);
@@ -573,9 +588,7 @@ mod tests {
         assert!(db.get_flight().is_ok());
 
         // Retrieve the Flight from the Database
-        let loaded_flight: Flight = db
-            .get_flight()?
-            .ok_or(rusqlite::Error::QueryReturnedNoRows)?;
+        let loaded_flight: Flight = db.get_flight()?.ok_or(Error::QueryReturnedNoRows)?;
         println!("Retrieved Flight: {:#?}", loaded_flight);
 
         // Assert that the retrieved Flight is the same as the original
@@ -592,14 +605,14 @@ mod tests {
 
         // Delete the Flight from the Database
         db.delete_flight(&flight.id)?;
-        assert!(db.get_flight().is_err());
+        assert!(db.get_flight()?.is_none());
 
         Ok(())
     }
 
     /// Tests a [Rachis] creation
     #[test]
-    fn test_rachis_creation() -> rusqlite::Result<(), rusqlite::Error> {
+    fn test_rachis_creation() -> Result<(), Error> {
         // Create a new Database
         let db = Database::open(":memory:")?;
         println!("Database: {:#?}", db);
@@ -608,12 +621,15 @@ mod tests {
         let flight: Flight = Flight::new(String::from("Hold My Rachis"));
         println!("Flight: {:#?}", flight);
 
-        // ...and a new Rachis
+        // ——————— Single Rachis Creation ———————
+
+        // Create one new Rachis
         let rachis: Rachis = Rachis::new(
             flight.id,
             String::from("Hello, Rachis!"),
-            RachisType::Default,
+            RachisType::DEFAULT,
             String::from("Story"),
+            String::from(""),
         );
         println!("Rachis: {:#?}", rachis);
 
@@ -625,55 +641,41 @@ mod tests {
         // Insert the Rachis into the Database
         db.create_rachis(&rachis)?;
         // Assert that the Rachis is in the Database
-        assert!(db.get_rachis(&rachis.id).is_ok());
+        assert!(db.get_rachis_by_id(&rachis.id).is_ok());
 
-        Ok(())
-    }
+        // ——————— Multiple Rachis Creation ———————
 
-    /// Tests multiple [Rachis] creations
-    #[test]
-    fn test_multiple_rachis_creation() -> rusqlite::Result<(), rusqlite::Error> {
-        // Create a new Database
-        let db = Database::open(":memory:")?;
-        println!("Database: {:#?}", db);
-
-        // Create a new Flight
-        let flight: Flight = Flight::new(String::from("Hold My Rachis"));
-        println!("Flight: {:#?}", flight);
-
-        // ...and many new Rachises
+        // Create many Rachises
         let rachises: Vec<Rachis> = vec![
             Rachis::new(
                 flight.id,
                 String::from("Under Guise of Stars"),
-                RachisType::Default,
+                RachisType::DEFAULT,
                 String::from("Arc 1"),
+                String::from(""),
             ),
             Rachis::new(
                 flight.id,
                 String::from("Whom It May Concern"),
-                RachisType::Default,
+                RachisType::DEFAULT,
                 String::from("Arc 1"),
+                String::from(""),
             ),
             Rachis::new(
                 flight.id,
                 String::from("Epistles for the Cosmos"),
-                RachisType::Default,
+                RachisType::DEFAULT,
                 String::from("Arc 1"),
+                String::from(""),
             ),
         ];
         println!("Rachises: {:#?}", rachises);
-
-        // Insert the Flight into the Database
-        db.create_flight(&flight)?;
-        // Assert that the Flight is in the Database
-        assert!(db.get_flight().is_ok());
 
         // Insert the Rachises into the Database
         for rachis in rachises {
             db.create_rachis(&rachis)?;
             // Assert that the Rachis is in the Database
-            assert!(db.get_rachis(&rachis.id).is_ok());
+            assert!(db.get_rachis_by_id(&rachis.id).is_ok());
         }
 
         Ok(())
@@ -681,7 +683,7 @@ mod tests {
 
     /// Tests listing multiple [Rachises](Rachis)
     #[test]
-    fn test_rachis_listing() -> rusqlite::Result<(), rusqlite::Error> {
+    fn test_rachis_listing() -> Result<(), Error> {
         // Create a new Database
         let db = Database::open(":memory:")?;
         println!("Database: {:#?}", db);
@@ -695,44 +697,51 @@ mod tests {
             Rachis::new(
                 flight.id,
                 String::from("Under Guise of Stars"),
-                RachisType::Default,
+                RachisType::DEFAULT,
                 String::from("Arc 1"),
+                String::from(""),
             ),
             Rachis::new(
                 flight.id,
                 String::from("Whom It May Concern"),
-                RachisType::Default,
+                RachisType::DEFAULT,
                 String::from("Arc 1"),
+                String::from(""),
             ),
             Rachis::new(
                 flight.id,
                 String::from("Epistles for the Cosmos"),
-                RachisType::Default,
+                RachisType::DEFAULT,
                 String::from("Arc 1"),
+                String::from(""),
             ),
             Rachis::new(
                 flight.id,
                 String::from("Twilight Sparkle"),
-                RachisType::Character,
+                RachisType::CHARACTER,
                 String::from("Arc 2"),
+                String::from(""),
             ),
             Rachis::new(
                 flight.id,
                 String::from("Pinkie Pie"),
-                RachisType::Character,
+                RachisType::CHARACTER,
                 String::from("Arc 2"),
+                String::from(""),
             ),
             Rachis::new(
                 flight.id,
                 String::from("Canterlot Castle"),
-                RachisType::Location,
+                RachisType::LOCATION,
                 String::from("Arc 2"),
+                String::from(""),
             ),
             Rachis::new(
                 flight.id,
                 String::from("Tirek's Return"),
-                RachisType::Event,
+                RachisType::EVENT,
                 String::from("Arc 2"),
+                String::from(""),
             ),
         ];
         println!("Rachises: {:#?}", rachises);
@@ -746,7 +755,7 @@ mod tests {
         for rachis in rachises {
             db.create_rachis(&rachis)?;
             // Assert that the Rachis is in the Database
-            assert!(db.get_rachis(&rachis.id).is_ok());
+            assert!(db.get_rachis_by_id(&rachis.id).is_ok());
         }
 
         // List the Rachises in the Database
@@ -757,7 +766,7 @@ mod tests {
         assert_eq!(rachises.len(), 7);
 
         // List the Character Rachises in the Database
-        let rachises: Vec<Rachis> = db.list_rachises(Some(RachisType::Character))?;
+        let rachises: Vec<Rachis> = db.list_rachises(Some(RachisType::CHARACTER))?;
         for rachis in &rachises {
             println!("Rachis: {:#?}", rachis);
         }
@@ -767,7 +776,7 @@ mod tests {
     }
 
     #[test]
-    fn test_rachis_update() -> rusqlite::Result<(), rusqlite::Error> {
+    fn test_rachis_update() -> Result<(), Error> {
         // Generate a new Database
         let db: Database = Database::open(":memory:")?;
         println!("Database: {:#?}", db);
@@ -780,8 +789,9 @@ mod tests {
         let mut rachis: Rachis = Rachis::new(
             flight.id,
             String::from("Under Guise of Stars"),
-            RachisType::Default,
+            RachisType::DEFAULT,
             String::from("Arc 1"),
+            String::from(""),
         );
         println!("Rachis: {:#?}", rachis);
 
@@ -793,7 +803,7 @@ mod tests {
         // Insert the Rachis into the Database
         db.create_rachis(&rachis)?;
         // Assert that the Rachis is in the Database
-        assert!(db.get_rachis(&rachis.id).is_ok());
+        assert!(db.get_rachis_by_id(&rachis.id).is_ok());
 
         // Add a second-long sleep
         std::thread::sleep(std::time::Duration::from_secs(1));
@@ -802,15 +812,16 @@ mod tests {
         let new_rachis: Rachis = Rachis::new(
             flight.id,
             String::from("For What It's Worth"),
-            RachisType::Default,
+            RachisType::DEFAULT,
             String::from("Arc 9"),
+            String::from(""),
         );
         db.update_rachis(&rachis.id, &new_rachis)?;
 
         // Updated the database, now update the Rachis itself
         rachis = db
-            .get_rachis(&rachis.id)?
-            .ok_or(rusqlite::Error::QueryReturnedNoRows)?;
+            .get_rachis_by_id(&rachis.id)?
+            .ok_or(Error::QueryReturnedNoRows)?;
 
         println!("Titles: {} | {}", rachis.title, new_rachis.title);
         assert_eq!(rachis.title, new_rachis.title);
@@ -830,6 +841,41 @@ mod tests {
         Ok(())
     }
 
-    // #[test]
-    // fn test_rachis_deletion() -> rusqlite::Result<(), rusqlite::Error> {}
+    #[test]
+    fn test_rachis_deletion() -> Result<(), Error> {
+        // Generate a new Database
+        let db: Database = Database::open(":memory:")?;
+        println!("Database: {:#?}", db);
+
+        // Create a new Flight
+        let flight: Flight = Flight::new(String::from("Hold My Rachis"));
+        println!("Flight: {:#?}", flight);
+
+        // Insert the Flight into the Database
+        db.create_flight(&flight)?;
+        // Assert that the Flight is in the Database
+        assert!(db.get_flight().is_ok());
+
+        // Create a new Rachis to delete
+        let rachis: Rachis = Rachis::new(
+            flight.id,
+            String::from(""),
+            RachisType::DEFAULT,
+            String::from(""),
+            String::from(""),
+        );
+
+        // Insert the Rachis into the Database
+        db.create_rachis(&rachis)?;
+
+        // Assert that the Rachis is in the Database
+        assert!(db.get_rachis_by_id(&rachis.id).is_ok());
+
+        // Delete the rachis
+        db.delete_rachis(rachis.id)?;
+        // Assert that the Rachis is no longer in the Database :(
+        assert!(db.get_rachis_by_id(&rachis.id)?.is_none());
+
+        Ok(())
+    }
 }

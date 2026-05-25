@@ -177,8 +177,8 @@ impl Tag {
                             is_index = false;
                         }
 
-                        // If the character is part of the index and not a modifier, add to the display
-                        // text string
+                        // If the character is part of the index and not a modifier, add to the
+                        // display text string
                         if is_display_text && !MODIFIERS.contains(&c) {
                             display_text.push(c);
                         } else {
@@ -195,7 +195,6 @@ impl Tag {
                 // Push the current character to the content string
                 println!("Pushing \"{c}\" to content.");
                 content.push(c);
-                // TODO: For some reason, whenever there's a tag with a file space, it adds in a leading "/" that I don't know how to get out
             }
         }
 

@@ -1,6 +1,7 @@
 use std::fmt;
 
 use chrono::{DateTime, Timelike, Utc};
+use ts_rs::TS;
 use uuid::Uuid;
 
 /// A Flight is the top-level container — the folder that contains everything related to one
@@ -14,7 +15,8 @@ use uuid::Uuid;
 /// * `updated_at` - The time the Flight was last updated.
 ///
 /// TODO: Develop better documentation for Flight struct
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)] // Allows Flight structs to utilise Debug and Clone traits
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, TS)]
+#[ts(export)]
 pub struct Flight {
     /// Unique identifier for the Flight
     pub id: Uuid,
@@ -63,8 +65,9 @@ impl Flight {
         }
     }
 
-    /// Updates the Flight's name and modification timestamp
-    /// Takes `&mut self` since the struct needs to be mutable
+    /// Updates the Flight's name and modification timestamp.
+    ///
+    /// Takes `&mut self` since the struct needs to be mutable.
     ///
     /// # Arguments
     ///
@@ -98,40 +101,41 @@ impl Flight {
 ///
 /// # Types
 ///
-/// * [RachisType.Act](RachisType.Act) - An Act Rachis. Conceptualised as the largest unit of the story, encapsulating multiple arcs.
-/// * [RachisType.Arc](RachisType.Arc) - An Arc Rachis. Conceptualised as a collection of Scenes and comprise a character's journey through the story.
-/// * [RachisType.Scene](RachisType.Scene) - A Scene Rachis. Conceptualised as a specific event or moment during the story.
-/// * [RachisType.Default](RachisType.Default) - A default Rachis
-/// * [RachisType.Character](RachisType.Character) - A Character Rachis. Conceptualised as a specific person, character, or otherwise entity in the story.
-/// * [RachisType.Event](RachisType.Event) - An Event Rachis. Conceptualised as a specific happenstance in the story.
-/// * [RachisType.Location](RachisType.Location) - A Location Rachis. Conceptualised as a specific place or area in the story.
-/// * [RachisType.Item](RachisType.Item) - An Item Rachis. Conceptualised as a specific object or thing in the story.
-/// * [RachisType.Note](RachisType.Note) - A Note Rachis. Conceptualised as a author-level commentary or note on the story.
-#[derive(Debug, Clone, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
+/// * [RachisType::ACT](RachisType::ACT) - An Act Rachis. Conceptualised as the largest unit of the story, encapsulating multiple arcs.
+/// * [RachisType::ARC](RachisType::ARC) - An Arc Rachis. Conceptualised as a collection of Scenes and comprise a character's journey through the story.
+/// * [RachisType::SCENE](RachisType::SCENE) - A Scene Rachis. Conceptualised as a specific event or moment during the story.
+/// * [RachisType::DEFAULT](RachisType::DEFAULT) - A default Rachis
+/// * [RachisType::CHARACTER](RachisType::CHARACTER) - A Character Rachis. Conceptualised as a specific person, character, or otherwise entity in the story.
+/// * [RachisType::EVENT](RachisType::EVENT) - An Event Rachis. Conceptualised as a specific happenstance in the story.
+/// * [RachisType::LOCATION](RachisType::LOCATION) - A Location Rachis. Conceptualised as a specific place or area in the story.
+/// * [RachisType::ITEM](RachisType::ITEM) - An Item Rachis. Conceptualised as a specific object or thing in the story.
+/// * [RachisType::NOTE](RachisType::NOTE) - A Note Rachis. Conceptualised as a author-level commentary or note on the story.
+#[derive(Debug, Clone, Eq, PartialEq, serde::Serialize, serde::Deserialize, TS)]
+#[ts(export, repr(enum = name))]
 pub enum RachisType {
     // Generic Rachis types
     // These are more meta and describe the story itself
-    /// An Act Rachis. Conceptualised as the largest unit of the story, encapsulating multiple arcs.
-    Act,
-    /// An Arc Rachis. Conceptualised as a collection of Scenes and comprise a character's journey through the story.
-    Arc,
-    /// A Scene Rachis. Conceptualised as a specific event or moment during the story.
-    Scene,
-    /// A default Rachis
-    Default,
+    /// An Act [Rachis]. Conceptualised as the largest unit of the story, encapsulating multiple arcs.
+    ACT,
+    /// An Arc [Rachis]. Conceptualised as a collection of Scenes and comprise a character's journey through the story.
+    ARC,
+    /// A Scene [Rachis]. Conceptualised as a specific event or moment during the story.
+    SCENE,
+    /// A default [Rachis]
+    DEFAULT,
 
     // Entity Rachis types
     // These are Rachises that define some recognisable entity in the story
-    /// A Character Rachis. Conceptualised as a specific person, character, or otherwise entity in the story.
-    Character,
-    /// An Event Rachis. Conceptualised as a specific happenstance in the story.
-    Event,
-    /// A Location Rachis. Conceptualised as a specific place or area in the story.
-    Location,
-    /// An Item Rachis. Conceptualised as a specific object or thing in the story.
-    Item,
-    /// A Note Rachis. Conceptualised as a author-level commentary or note on the story.
-    Note,
+    /// A Character [Rachis]. Conceptualised as a specific person, character, or otherwise entity in the story.
+    CHARACTER,
+    /// An Event [Rachis]. Conceptualised as a specific happenstance in the story.
+    EVENT,
+    /// A Location [Rachis]. Conceptualised as a specific place or area in the story.
+    LOCATION,
+    /// An Item [Rachis]. Conceptualised as a specific object or thing in the story.
+    ITEM,
+    /// A Note [Rachis]. Conceptualised as a author-level commentary or note on the story.
+    NOTE,
 }
 
 impl RachisType {
@@ -146,15 +150,15 @@ impl RachisType {
     /// TODO: Generate examples for RachisType::as_str()
     pub fn as_str(&self) -> &'static str {
         match self {
-            RachisType::Act => "Act",
-            RachisType::Arc => "Arc",
-            RachisType::Scene => "Scene",
-            RachisType::Default => "Default",
-            RachisType::Character => "Character",
-            RachisType::Event => "Event",
-            RachisType::Location => "Location",
-            RachisType::Item => "Item",
-            RachisType::Note => "Note",
+            RachisType::ACT => "act",
+            RachisType::ARC => "arc",
+            RachisType::SCENE => "scene",
+            RachisType::DEFAULT => "default",
+            RachisType::CHARACTER => "character",
+            RachisType::EVENT => "event",
+            RachisType::LOCATION => "location",
+            RachisType::ITEM => "item",
+            RachisType::NOTE => "note",
         }
     }
 
@@ -172,16 +176,16 @@ impl RachisType {
     ///
     /// TODO: Generate examples for RachisType::from_str()
     pub fn from_str(s: &str) -> Result<RachisType, String> {
-        match s {
-            "Act" | "act" => Ok(RachisType::Act),
-            "Arc" | "arc" => Ok(RachisType::Arc),
-            "Scene" | "scene" => Ok(RachisType::Scene),
-            "Default" | "default" => Ok(RachisType::Default),
-            "Character" | "character" => Ok(RachisType::Character),
-            "Event" | "event" => Ok(RachisType::Event),
-            "Location" | "location" => Ok(RachisType::Location),
-            "Item" | "item" => Ok(RachisType::Item),
-            "Note" | "note" => Ok(RachisType::Note),
+        match s.to_lowercase().as_str() {
+            "act" => Ok(RachisType::ACT),
+            "arc" => Ok(RachisType::ARC),
+            "scene" => Ok(RachisType::SCENE),
+            "default" => Ok(RachisType::DEFAULT),
+            "character" => Ok(RachisType::CHARACTER),
+            "event" => Ok(RachisType::EVENT),
+            "location" => Ok(RachisType::LOCATION),
+            "item" => Ok(RachisType::ITEM),
+            "note" => Ok(RachisType::NOTE),
             _ => Err(format!("Invalid RachisType: {}", s)),
         }
     }
@@ -192,18 +196,25 @@ impl fmt::Display for RachisType {
         write!(
             f,
             "{}",
-            match self {
-                RachisType::Act => "Act",
-                RachisType::Arc => "Arc",
-                RachisType::Scene => "Scene",
-                RachisType::Default => "Default",
-                RachisType::Character => "Character",
-                RachisType::Event => "Event",
-                RachisType::Location => "Location",
-                RachisType::Item => "Item",
-                RachisType::Note => "Note",
-            }
+            // match self {
+            //     RachisType::ACT => "Act",
+            //     RachisType::ARC => "Arc",
+            //     RachisType::SCENE => "Scene",
+            //     RachisType::DEFAULT => "Default",
+            //     RachisType::CHARACTER => "Character",
+            //     RachisType::EVENT => "Event",
+            //     RachisType::LOCATION => "Location",
+            //     RachisType::ITEM => "Item",
+            //     RachisType::NOTE => "Note",
+            // }
+            self.as_str()
         )
+    }
+}
+
+impl Default for RachisType {
+    fn default() -> Self {
+        RachisType::DEFAULT
     }
 }
 
@@ -220,7 +231,8 @@ impl fmt::Display for RachisType {
 /// * `created_at: DateTime<Utc>` - The time the Rachis was created.
 /// * `updated_at: DateTime<Utc>` - The time the Rachis was last updated.
 /// * `word_count: usize` - The word count of the Rachis.
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, TS)]
+#[ts(export)]
 pub struct Rachis {
     /// The unique identifier for the Rachis.
     pub id: Uuid,
@@ -230,8 +242,7 @@ pub struct Rachis {
     pub title: String,
     /// The content of the Rachis.
     pub content: String,
-    /// The type of the Rachis.
-    /// See [RachisType](RachisType)
+    /// The type of the Rachis (see [RachisType](RachisType)).
     pub r#type: RachisType,
     /// The path of the Rachis.
     pub path: String,
@@ -268,7 +279,13 @@ impl Rachis {
     /// # Examples
     ///
     /// TODO: Generate examples for Rachis::new()
-    pub fn new(flight_id: Uuid, title: String, r#type: RachisType, path: String) -> Self {
+    pub fn new(
+        flight_id: Uuid,
+        title: String,
+        r#type: RachisType,
+        path: String,
+        content: String,
+    ) -> Self {
         // Get the current timestamp
         let now: DateTime<Utc> = Utc::now().with_nanosecond(0).unwrap();
 
@@ -277,7 +294,7 @@ impl Rachis {
             id: Uuid::new_v4(),
             flight_id,
             title,
-            content: String::from(""),
+            content,
             r#type,
             path,
             created_at: now,
@@ -367,6 +384,9 @@ mod tests {
         assert_eq!(flight.name, "My Writing Project");
         assert!(flight.created_at <= flight.updated_at);
 
+        // Sleep for 1 second
+        std::thread::sleep(std::time::Duration::from_secs(1));
+
         // Test Flight updating
         let mut flight: Flight = flight; // Make mutable copy
         assert!(flight.update_name(String::from("Better Title")).is_ok()); // Change title
@@ -396,8 +416,9 @@ mod tests {
         let rachis: Rachis = Rachis::new(
             flight.id,
             String::from("Hello, Rachis!"),
-            RachisType::Default,
+            RachisType::DEFAULT,
             String::from("Story"),
+            String::from(""),
         );
 
         // Assert Rachis flight_id == Flight id
@@ -407,11 +428,37 @@ mod tests {
         // Assert Rachis path == "Story"
         assert_eq!(rachis.path, "Story");
         // Assert Rachis type == Default
-        assert_eq!(rachis.r#type, RachisType::Default);
+        assert_eq!(rachis.r#type, RachisType::DEFAULT);
         // Assert Rachis content == ""
         assert_eq!(rachis.content, "");
         // Assert Rachis word count == 0
         assert_eq!(rachis.word_count, 0)
+    }
+
+    #[test]
+    fn test_rachis_json() {
+        let flight: Flight = Flight::new(String::from("Hold My Rachis"));
+        let rachis: Rachis = Rachis::new(
+            flight.id,
+            String::from("Hello, Rachis!"),
+            RachisType::DEFAULT,
+            String::from("Story"),
+            String::from(""),
+        );
+
+        let json: String = serde_json::to_string(&rachis).unwrap();
+        let deserialised: Rachis = serde_json::from_str(&json).unwrap();
+
+        // Assert that the deserialised Rachis is the same as the original
+        assert_eq!(rachis.id, deserialised.id);
+        assert_eq!(rachis.flight_id, deserialised.flight_id);
+        assert_eq!(rachis.title, deserialised.title);
+        assert_eq!(rachis.content, deserialised.content);
+        assert_eq!(rachis.r#type, deserialised.r#type);
+        assert_eq!(
+            rachis.created_at.timestamp(),
+            deserialised.created_at.timestamp()
+        );
     }
 
     #[test]
@@ -420,8 +467,9 @@ mod tests {
         let mut rachis: Rachis = Rachis::new(
             flight.id,
             String::from("Hello, Rachis!"),
-            RachisType::Default,
+            RachisType::DEFAULT,
             String::from("Story"),
+            String::from(""),
         );
 
         // Assert name update is OK

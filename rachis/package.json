@@ -20,13 +20,34 @@
         "@tauri-apps/plugin-opener": "^2.5.4"
     },
     "devDependencies": {
+        "@codemirror/commands": "^6.10.3",
+        "@codemirror/lang-markdown": "^6.5.0",
+        "@codemirror/state": "^6.6.0",
+        "@codemirror/view": "^6.43.0",
         "@sveltejs/adapter-static": "^3.0.10",
-        "@sveltejs/kit": "^2.59.1",
+        "@sveltejs/kit": "^2.61.1",
         "@sveltejs/vite-plugin-svelte": "^7.1.2",
-        "svelte": "^5.55.5",
+        "@tauri-apps/cli": "^2.11.2",
+        "@types/node": "^25.9.1",
+        "codemirror": "^6.0.2",
+        "svelte": "^5.55.9",
         "svelte-check": "^4.4.8",
         "typescript": "~6.0.3",
-        "vite": "~8.0.12",
-        "@tauri-apps/cli": "^2.11.1"
+        "vite": "~8.0.14"
+    },
+    "prettier": {
+        "bracketSameLine": true,
+        "bracketSpacing": true,
+        "endOfLine": "crlf",
+        "experimentalOperatorPosition": "start",
+        "experimentalTernaries": true,
+        "objectWrap": "preserve",
+        "printWidth": 80,
+        "quoteProps": "as-needed",
+        "semi": true,
+        "singleQuote": false,
+        "tabWidth": 4,
+        "trailingComma": "es5",
+        "useTabs": false
     }
 }

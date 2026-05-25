@@ -7,6 +7,8 @@ use std::sync::{Mutex, MutexGuard};
 use storage::Database;
 use tauri::{Manager, State};
 
+use crate::domain::RachisType;
+
 struct AppData {
     db: Mutex<storage::Database>,
 }
@@ -17,6 +19,17 @@ fn parse_tag(input: &str) -> Option<tag::Tag> {
     println!("Parsing tag: {}", input);
     tag::Tag::parse(input)
 }
+
+// ———————— Database Mgmt ————————
+// 
+// #[tauri::command(rename_all = "snake_case")]
+// fn new_project(path: &str) -> Result<(), String> {}
+// 
+// #[tauri::command(rename_all = "snake_case")]
+// fn open_project(path: &str) -> Result<(), String> {}
+// 
+// #[tauri::command(rename_all = "snake_case")]
+// fn delete_project(path: &str) -> Result<(), String> {}
 
 // ———————— Rachis CRUD ————————
 
@@ -69,10 +82,18 @@ fn delete_flight(state: State<AppData>, id: uuid::Uuid) -> Result<(), String> {
 
 /// Gets a Rachis from the database.
 #[tauri::command(rename_all = "snake_case")]
-fn get_rachis(state: State<AppData>, id: uuid::Uuid) -> Result<Option<Rachis>, String> {
+fn get_rachis_by_id(state: State<AppData>, id: uuid::Uuid) -> Result<Option<Rachis>, String> {
     let db: MutexGuard<'_, Database> = state.db.lock().unwrap();
-    db.get_rachis(&id)
+    db.get_rachis_by_id(&id)
         .map_err(|e: rusqlite::Error| e.to_string())
+}
+
+/// Gets a Rachis from the database by its title
+#[tauri::command(rename_all = "snake_case")]
+fn get_rachises_by_title(state: State<AppData>, title: String) -> Result<Vec<Rachis>, String> {
+    let db: MutexGuard<'_, Database> = state.db.lock().unwrap();
+    db.get_rachises_by_title(&title)
+        .map_err(|e| e.to_string())
 }
 
 /// Lists some or all Rachises from the database.
@@ -88,10 +109,34 @@ fn list_rachises(
 
 /// Inserts a Rachis into the database.
 #[tauri::command(rename_all = "snake_case")]
-fn create_rachis(state: State<AppData>, rachis: Rachis) -> Result<(), String> {
+fn create_rachis(
+    state: State<AppData>,
+    title: String,
+    r#type: Option<RachisType>,
+    content: Option<String>,
+    path: Option<String>,
+) -> Result<Rachis, String> {
     let db: MutexGuard<'_, Database> = state.db.lock().unwrap();
+
+    // Get the flight from the project database
+    let flight: Flight = db
+        .get_flight()
+        .map_err(|e: rusqlite::Error| e.to_string())?
+        .ok_or("No flight exists. Create a Flight first.")?;
+
+    // Build the full Rachis
+    let rachis: Rachis = Rachis::new(
+        flight.id,
+        title,
+        r#type.unwrap_or_default(),
+        path.unwrap_or_default(),
+        content.unwrap_or_default(),
+    );
+
     db.create_rachis(&rachis)
-        .map_err(|e: rusqlite::Error| e.to_string())
+        .map_err(|e: rusqlite::Error| e.to_string())?;
+    
+    Ok(rachis)
 }
 
 /// Updates a Rachis in the database.
@@ -101,7 +146,7 @@ fn update_rachis(state: State<AppData>, rachis: Rachis) -> Result<(), String> {
 
     // We need to make sure that the Rachis actually exists in the database
     let _update_rachis: Rachis = db
-        .get_rachis(&rachis.id)
+        .get_rachis_by_id(&rachis.id)
         .map_err(|e: rusqlite::Error| e.to_string())?
         .ok_or("Rachis not found")?;
 
@@ -128,7 +173,7 @@ pub fn run() {
 
             // Append the database path and open
             let db_path: std::path::PathBuf = app_dir.join("rachis.db");
-            let db: Database = Database::open(":memory:") // TODO: Use db_path when ready
+            let db: Database = Database::open(&db_path.to_str().unwrap()) // TODO: Use db_path when ready
                 .expect("Failed to open database");
             app.manage(AppData { db: Mutex::new(db) });
             Ok(())
@@ -138,7 +183,8 @@ pub fn run() {
             delete_flight,
             delete_rachis,
             get_flight,
-            get_rachis,
+            get_rachis_by_id,
+            get_rachises_by_title,
             create_flight,
             create_rachis,
             list_rachises,
