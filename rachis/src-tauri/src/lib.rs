@@ -2,12 +2,10 @@ mod domain;
 mod storage;
 mod tag;
 
-use domain::{Flight, Rachis};
+use domain::{Flight, Rachis, RachisType};
 use std::sync::{Mutex, MutexGuard};
 use storage::Database;
 use tauri::{Manager, State};
-
-use crate::domain::RachisType;
 
 struct AppData {
     db: Mutex<storage::Database>,
@@ -21,13 +19,13 @@ fn parse_tag(input: &str) -> Option<tag::Tag> {
 }
 
 // ———————— Database Mgmt ————————
-// 
+//
 // #[tauri::command(rename_all = "snake_case")]
 // fn new_project(path: &str) -> Result<(), String> {}
-// 
+//
 // #[tauri::command(rename_all = "snake_case")]
 // fn open_project(path: &str) -> Result<(), String> {}
-// 
+//
 // #[tauri::command(rename_all = "snake_case")]
 // fn delete_project(path: &str) -> Result<(), String> {}
 
@@ -90,20 +88,22 @@ fn get_rachis_by_id(state: State<AppData>, id: uuid::Uuid) -> Result<Option<Rach
 
 /// Gets a Rachis from the database by its title
 #[tauri::command(rename_all = "snake_case")]
-fn get_rachises_by_title(state: State<AppData>, title: String) -> Result<Vec<Rachis>, String> {
+fn get_rachises_by_title(
+    state: State<AppData>,
+    title: Option<String>,
+) -> Result<Vec<Rachis>, String> {
     let db: MutexGuard<'_, Database> = state.db.lock().unwrap();
-    db.get_rachises_by_title(&title)
-        .map_err(|e| e.to_string())
+    db.get_rachises_by_title(title).map_err(|e| e.to_string())
 }
 
 /// Lists some or all Rachises from the database.
 #[tauri::command(rename_all = "snake_case")]
-fn list_rachises(
+fn get_rachises_by_type(
     state: State<AppData>,
-    r#type: Option<domain::RachisType>,
+    r#type: Option<RachisType>,
 ) -> Result<Vec<Rachis>, String> {
     let db: MutexGuard<'_, Database> = state.db.lock().unwrap();
-    db.list_rachises(r#type)
+    db.get_rachises_by_type(r#type)
         .map_err(|e: rusqlite::Error| e.to_string())
 }
 
@@ -135,7 +135,7 @@ fn create_rachis(
 
     db.create_rachis(&rachis)
         .map_err(|e: rusqlite::Error| e.to_string())?;
-    
+
     Ok(rachis)
 }
 
@@ -185,9 +185,9 @@ pub fn run() {
             get_flight,
             get_rachis_by_id,
             get_rachises_by_title,
+            get_rachises_by_type,
             create_flight,
             create_rachis,
-            list_rachises,
             parse_tag,
             update_flight,
             update_rachis,

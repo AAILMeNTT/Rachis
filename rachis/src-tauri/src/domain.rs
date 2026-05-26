@@ -1,4 +1,5 @@
 use std::fmt;
+use std::fmt::{Display, Formatter};
 
 use chrono::{DateTime, Timelike, Utc};
 use ts_rs::TS;
@@ -9,10 +10,10 @@ use uuid::Uuid;
 ///
 /// # Fields
 ///
-/// * `id` - The unique identifier for the Flight.
-/// * `name` - The name given by the user to the Flight.
-/// * `created_at` - The time the Flight was created.
-/// * `updated_at` - The time the Flight was last updated.
+/// * `id`: [Uuid] - The unique identifier for the Flight.
+/// * `name`: [String] - The name given by the user to the Flight.
+/// * `created_at`: [DateTime<Utc>] - The time the Flight was created.
+/// * `updated_at`: [DateTime<Utc>] - The time the Flight was last updated.
 ///
 /// TODO: Develop better documentation for Flight struct
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, TS)]
@@ -32,8 +33,8 @@ pub struct Flight {
 ///
 /// # Functions
 ///
-/// * [Flight::new](Flight::new) - Creates a new Flight with the given name.
-/// * [Flight::update_name](Flight::update_name) - Updates the Flight's name and modification timestamp
+/// * [new()](Flight::new) - Creates a new Flight with the given name.
+/// * [update_name()](Flight::update_name) - Updates the Flight's name and modification timestamp
 ///
 /// # Examples
 ///
@@ -95,21 +96,32 @@ impl Flight {
 }
 
 /// Defines the types of Rachises that may exist.
+///
 /// Rachis types come in primarily two groups: Generic Rachises and Entity Rachises.
 /// Generic Rachis types are more meta and describe the story itself, while Entity Rachises
 /// define some recognisable entity in the story.
 ///
 /// # Types
 ///
+/// ## Generic Rachis Types
+///
 /// * [RachisType::ACT](RachisType::ACT) - An Act Rachis. Conceptualised as the largest unit of the story, encapsulating multiple arcs.
 /// * [RachisType::ARC](RachisType::ARC) - An Arc Rachis. Conceptualised as a collection of Scenes and comprise a character's journey through the story.
 /// * [RachisType::SCENE](RachisType::SCENE) - A Scene Rachis. Conceptualised as a specific event or moment during the story.
 /// * [RachisType::DEFAULT](RachisType::DEFAULT) - A default Rachis
+///
+/// ## Entity Rachis Types
+///
 /// * [RachisType::CHARACTER](RachisType::CHARACTER) - A Character Rachis. Conceptualised as a specific person, character, or otherwise entity in the story.
 /// * [RachisType::EVENT](RachisType::EVENT) - An Event Rachis. Conceptualised as a specific happenstance in the story.
 /// * [RachisType::LOCATION](RachisType::LOCATION) - A Location Rachis. Conceptualised as a specific place or area in the story.
 /// * [RachisType::ITEM](RachisType::ITEM) - An Item Rachis. Conceptualised as a specific object or thing in the story.
 /// * [RachisType::NOTE](RachisType::NOTE) - A Note Rachis. Conceptualised as a author-level commentary or note on the story.
+///
+/// # Functions
+///
+/// * [as_str()](RachisType::as_str) - Returns the string representation of the [RachisType].
+/// * [from_str()](RachisType::from_str) - Returns a [RachisType] from a string representation.
 #[derive(Debug, Clone, Eq, PartialEq, serde::Serialize, serde::Deserialize, TS)]
 #[ts(export, repr(enum = name))]
 pub enum RachisType {
@@ -166,11 +178,11 @@ impl RachisType {
     ///
     /// # Arguments
     ///
-    /// * `s: &str` - The string to create the [RachisType] from.
+    /// * `s`: &[str] - The string to create the [RachisType] from.
     ///
     /// # Returns
     ///
-    /// * `Result<RachisType, String>` - The [RachisType] created from the string, or an error message if the string is invalid.
+    /// * [Result]<[RachisType], [String]> - The [RachisType] created from the string, or an error message if the string is invalid.
     ///
     /// # Examples
     ///
@@ -191,24 +203,9 @@ impl RachisType {
     }
 }
 
-impl fmt::Display for RachisType {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "{}",
-            // match self {
-            //     RachisType::ACT => "Act",
-            //     RachisType::ARC => "Arc",
-            //     RachisType::SCENE => "Scene",
-            //     RachisType::DEFAULT => "Default",
-            //     RachisType::CHARACTER => "Character",
-            //     RachisType::EVENT => "Event",
-            //     RachisType::LOCATION => "Location",
-            //     RachisType::ITEM => "Item",
-            //     RachisType::NOTE => "Note",
-            // }
-            self.as_str()
-        )
+impl Display for RachisType {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.as_str())
     }
 }
 
@@ -222,15 +219,22 @@ impl Default for RachisType {
 ///
 /// # Fields
 ///
-/// * `id: Uuid` - The unique identifier for the Rachis.
-/// * `flight_id: Uuid` - The ID of the Flight that this Rachis belongs to.
-/// * `title: String` - The title of the Rachis.
-/// * `content: String` - The content of the Rachis.
-/// * `r#type: RachisType` - The type of the Rachis.
-/// * `path: String` - The path of the Rachis.
-/// * `created_at: DateTime<Utc>` - The time the Rachis was created.
-/// * `updated_at: DateTime<Utc>` - The time the Rachis was last updated.
-/// * `word_count: usize` - The word count of the Rachis.
+/// * `id`: [Uuid] - The unique identifier for the Rachis.
+/// * `flight_id`: [Uuid] - The ID of the Flight that this Rachis belongs to.
+/// * `title`: [String] - The title of the Rachis.
+/// * `content`: [String] - The content of the Rachis.
+/// * `r#type`: [RachisType] - The type of the Rachis.
+/// * `path`: [String] - The path of the Rachis.
+/// * `created_at`: [DateTime<Utc>] - The time the Rachis was created.
+/// * `updated_at`: [DateTime<Utc>] - The time the Rachis was last updated.
+/// * `word_count`: [usize] - The word count of the Rachis.
+///
+/// # Functions
+///
+/// * [new()](Rachis::new) - Creates a new Rachis.
+/// * [update_name()](Rachis::update_name) - Updates the name of the Rachis.
+/// * [update_content()](Rachis::update_content) - Updates the content of the Rachis.
+/// * [word_count()](Rachis::word_count) - Updates the word count of the Rachis.
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, TS)]
 #[ts(export)]
 pub struct Rachis {
@@ -242,7 +246,7 @@ pub struct Rachis {
     pub title: String,
     /// The content of the Rachis.
     pub content: String,
-    /// The type of the Rachis (see [RachisType](RachisType)).
+    /// The type of the Rachis (see [RachisType]).
     pub r#type: RachisType,
     /// The path of the Rachis.
     pub path: String,
@@ -255,26 +259,19 @@ pub struct Rachis {
 }
 
 /// Methods for the Rachis struct.
-///
-/// # Functions
-///
-/// * [Rachis::new](Rachis::new) - Creates a new Rachis.
-/// * [Rachis::update_name](Rachis::update_name) - Updates the name of the Rachis.
-/// * [Rachis::update_content](Rachis::update_content) - Updates the content of the Rachis.
-/// * [Rachis::update_word_count](Rachis::update_word_count) - Updates the word count of the Rachis.
 impl Rachis {
     /// Creates a new Rachis.
     ///
     /// # Arguments
     ///
-    /// * `flight_id: Uuid` - The ID of the Flight that this Rachis belongs to.
-    /// * `title: String` - The title of the Rachis.
-    /// * `r#type: [RachisType](RachisType)` - The type of the Rachis.
-    /// * `path: String` - The path of the Rachis.
+    /// * `flight_id`: [Uuid] - The ID of the Flight that this Rachis belongs to.
+    /// * `title`: [String] - The title of the Rachis.
+    /// * `r#type`: [RachisType] - The type of the Rachis.
+    /// * `path`: [String] - The path of the Rachis.
     ///
     /// # Returns
     ///
-    /// [Rachis](Rachis) - The newly generated Rachis.
+    /// [Rachis] - The newly generated Rachis.
     ///
     /// # Examples
     ///
@@ -307,11 +304,11 @@ impl Rachis {
     ///
     /// # Arguments
     ///
-    /// * `title: String` - The new title of the Rachis.
+    /// * `title`: [String] - The new title of the Rachis.
     ///
     /// # Returns
     ///
-    /// `Result<(), String>` - Returns an error if the title is empty, otherwise returns Ok(()).
+    /// [Result]<(), [String]> - Returns an error if the title is empty, otherwise returns Ok(()).
     ///
     /// # Examples
     ///
@@ -325,12 +322,9 @@ impl Rachis {
             return Err(String::from("Rachis name must not be empty!"));
         }
 
-        // Update the title
         self.title = title;
-        // Update the updated_at timestamp
         self.updated_at = Utc::now().with_nanosecond(0).unwrap();
 
-        // Return an OK result
         Ok(())
     }
 
@@ -338,11 +332,11 @@ impl Rachis {
     ///
     /// # Arguments
     ///
-    /// * `new_content: String` - The new content of the Rachis.
+    /// * `new_content`: [String] - The new content of the Rachis.
     ///
     /// # Returns
     ///
-    /// * `Result<(), String>` - Returns an error if the content is empty, otherwise returns Ok(()).
+    /// * [Result]<(), [String]> - Returns an error if content is empty, otherwise returns Ok(()).
     ///
     /// # Examples
     ///
@@ -352,7 +346,6 @@ impl Rachis {
         self.content = new_content;
         self.word_count = self.word_count();
 
-        // Return an OK result
         Ok(())
     }
 
@@ -366,7 +359,6 @@ impl Rachis {
     ///
     /// TODO: Generate examples for Rachis::word_count()
     pub fn word_count(&mut self) -> usize {
-        // Update word count of this Rachis
         self.content.trim().split_whitespace().count()
     }
 }
@@ -418,7 +410,7 @@ mod tests {
             String::from("Hello, Rachis!"),
             RachisType::DEFAULT,
             String::from("Story"),
-            String::from(""),
+            String::new(),
         );
 
         // Assert Rachis flight_id == Flight id
@@ -443,7 +435,7 @@ mod tests {
             String::from("Hello, Rachis!"),
             RachisType::DEFAULT,
             String::from("Story"),
-            String::from(""),
+            String::new(),
         );
 
         let json: String = serde_json::to_string(&rachis).unwrap();
@@ -469,7 +461,7 @@ mod tests {
             String::from("Hello, Rachis!"),
             RachisType::DEFAULT,
             String::from("Story"),
-            String::from(""),
+            String::new(),
         );
 
         // Assert name update is OK

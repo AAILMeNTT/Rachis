@@ -10,7 +10,7 @@
     <div>
         <pre>Search Rachis (leave empty to get all Rachises):</pre>
         <input type="text" bind:value={search_str} />
-        <button onclick={(): Promise<Rachis[]> => ss.getRachises(arg)}
+        <button onclick={(): Promise<Rachis[]> => ss.getRachisesByTitle(arg)}
             >Search</button>
     </div>
     <div>

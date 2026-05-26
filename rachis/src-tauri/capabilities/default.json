@@ -3,20 +3,17 @@
     "identifier": "default",
     "description": "Capability for the main window",
     "windows": ["main"],
-    "permissions": [
-        "core:default",
-        "opener:default"
-    ],
+    "permissions": ["core:default", "opener:default"],
     "commands": {
         "allow": [
+            "create_flight",
+            "create_rachis",
             "delete_flight",
             "delete_rachis",
             "get_flight",
             "get_rachis_by_id",
             "get_rachises_by_title",
-            "create_flight",
-            "create_rachis",
-            "list_rachises",
+            "get_rachises_by_type",
             "parse_tag",
             "update_flight",
             "update_rachis"

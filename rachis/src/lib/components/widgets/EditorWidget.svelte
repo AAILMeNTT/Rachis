@@ -14,7 +14,7 @@
     // actually... you know... load the data
 
     async function loadRachis(): Promise<void> {
-        ss.loadRachis(rachisId);
+        await ss.setRachisById(rachisId);
         rachisId = "";
 
         view?.dispatch({
@@ -23,6 +23,19 @@
                     from: 0,
                     to: view.state.doc.length,
                     insert: ss.current_rachis?.content ?? "",
+                },
+            ],
+        });
+    }
+
+    async function unloadRachis(): Promise<void> {
+        await ss.setRachisById();
+        view?.dispatch({
+            changes: [
+                {
+                    from: 0,
+                    to: view.state.doc.length,
+                    insert: "",
                 },
             ],
         });
@@ -46,7 +59,7 @@
         <p>Load Rachis (by ID):</p>
         <input type="text" bind:value={rachisId} />
         <button onclick={(): Promise<void> => loadRachis()}>Load</button>
-        <button onclick={(): Promise<void> => ss.unloadRachis()}>Unload</button>
+        <button onclick={(): Promise<void> => unloadRachis()}>Unload</button>
     </div>
     <div>
         <pre>Loaded Rachis: {JSON.stringify(ss.current_rachis, null, 4)}</pre>
