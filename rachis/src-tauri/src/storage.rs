@@ -324,8 +324,8 @@ impl Database {
             )?;
             result = statement.query_map(&[&title.unwrap().to_string()], f)?;
         }
-
         let result: Vec<Rachis> = result.collect::<Result<Vec<Rachis>, Error>>()?;
+        println!("Result: {:?}", result);
 
         Ok(result)
     }
@@ -408,7 +408,7 @@ impl Database {
     ///
     /// # Arguments
     ///
-    /// * `rachises`: &[Rachis] - The [Rachis]es to insert.
+    /// * `rachises`: &[Rachis] - The Rachises to insert.
     ///
     /// # Returns
     ///
@@ -946,15 +946,20 @@ mod tests {
         // Get all Rachises from the Database
         let fetched: Vec<Rachis> = db.get_rachises_by_title(None)?;
         // Assert that the Rachises are in the list
-        assert_eq!(rachises.len(), 3);
-        assert_eq!(fetched[0].id, rachises[0].id);
-        assert_eq!(fetched[1].id, rachises[1].id);
-        assert_eq!(fetched[2].id, rachises[2].id);
+        println!("Fetched count: {}", fetched.len());
+        assert_eq!(fetched.len(), 3);
+
+        for i in 0..fetched.len() {
+            println!("Fetched: {}\nRachis: {}", fetched[i].id, rachises[i].id);
+            assert_eq!(fetched[i].id, rachises[i].id);
+        }
 
         // Get Rachises named "Whom It May Concern" from the Database
         let fetched: Vec<Rachis> =
             db.get_rachises_by_title(Some(String::from("Whom It May Concern")))?;
         assert_eq!(fetched.len(), 1);
+        println!("Fetched: {}", fetched[0].id);
+        println!("Rachis: {}", rachises[1].id);
         assert_eq!(fetched[0].id, rachises[1].id);
 
         Ok(())

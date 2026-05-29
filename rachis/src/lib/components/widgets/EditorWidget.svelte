@@ -41,6 +41,12 @@
         });
     }
 
+    async function saveRachisContents(content: string): Promise<void> {
+        if (ss.current_rachis) {
+            await ss.updateRachis({ ...ss.current_rachis, content });
+        }
+    }
+
     onMount((): void => {
         view = new EditorView({
             doc: "Your story begins...",
@@ -65,4 +71,9 @@
         <pre>Loaded Rachis: {JSON.stringify(ss.current_rachis, null, 4)}</pre>
     </div>
     <div bind:this={editorElement}></div>
+    <div>
+        <button
+            onclick={(): Promise<void> =>
+                saveRachisContents(view.state.doc.toString())}>Save</button>
+    </div>
 </main>

@@ -14,9 +14,7 @@
             >Search</button>
     </div>
     <div>
-        <pre>Searching for: {search_str == "" ? "All Rachises" : (
-                search_str
-            )}</pre>
+        <pre>Searching for: {search_str || "All Rachises"}</pre>
         <pre>Rachises found: {JSON.stringify(ss.rachises_found, null, 4)}</pre>
     </div>
 </main>

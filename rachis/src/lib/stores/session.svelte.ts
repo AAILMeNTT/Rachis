@@ -20,16 +20,17 @@ class SessionStore {
      * @returns The retrieved Rachises
      */
     async getRachisesByTitle(title?: string | null): Promise<Rachis[]> {
-        return await invoke<Rachis[]>("get_rachises_by_title", {
+        this.rachises_found = await invoke<Rachis[]>("get_rachises_by_title", {
             title,
         });
+        return this.rachises_found;
     }
 
     /**
      * Retrieves a Rachis by its ID
      *
      * @param id The ID of the Rachis to retrieve
-     * 
+     *
      * @returns The retrieved Rachis
      */
     async getRachisById(id: string): Promise<Rachis | null> {
@@ -40,7 +41,7 @@ class SessionStore {
 
     /**
      * Sets the current Rachis by ID.
-     * 
+     *
      * If the ID is provided, fetches the Rachis by ID; otherwise, sets to null
      *
      * @param id The ID of the Rachis to set as current
@@ -55,6 +56,14 @@ class SessionStore {
                     id,
                 })
             :   null;
+    }
+
+    async updateRachis(rachis: Rachis): Promise<void> {
+        await invoke("update_rachis", {
+            rachis,
+        });
+
+        this.current_rachis = rachis;
     }
 }
 
