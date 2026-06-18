@@ -1,6 +1,6 @@
 {
     "name": "rachis",
-    "version": "0.3.0",
+    "version": "0.4.0",
     "description": "Rachis Writing: Desktop App",
     "type": "module",
     "scripts": {
@@ -9,38 +9,68 @@
         "preview": "vite preview",
         "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
         "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
-        "tauri": "tauri",
-        "tauriDev": "tauri dev",
-        "tauriBuildDebug": "tauri build --debug",
-        "tauriBuildRelease": "tauri build --release",
-        "build:grammar": "lezer-generator src/lib/editor/tag.grammar -o src/lib/editor/tag.js"
+        "t": "tauri",
+        "t-d": "tauri dev",
+        "t-bd": "tauri build --debug",
+        "t-br": "tauri build --release",
+        "sb": "storybook dev -p 6006",
+        "sb-b": "storybook build"
     },
     "license": "MIT",
     "dependencies": {
         "@codemirror/language": "^6.12.3",
         "@lezer/highlight": "^1.2.3",
         "@lezer/lr": "^1.4.10",
-        "@tauri-apps/api": "^2.11.0",
+        "@lucide/svelte": "^1.21.0",
+        "@tauri-apps/api": "^2.11.1",
         "@tauri-apps/plugin-opener": "^2.5.4"
     },
     "devDependencies": {
+        "@chromatic-com/storybook": "^5.2.1",
         "@codemirror/commands": "^6.10.3",
         "@codemirror/lang-markdown": "^6.5.0",
         "@codemirror/state": "^6.6.0",
-        "@codemirror/view": "^6.43.0",
+        "@codemirror/view": "^6.43.1",
         "@lezer/generator": "^1.8.0",
+        "@storybook/addon-a11y": "^10.4.6",
+        "@storybook/addon-docs": "^10.4.6",
+        "@storybook/addon-svelte-csf": "^5.1.2",
+        "@storybook/addon-vitest": "^10.4.6",
+        "@storybook/sveltekit": "^10.4.6",
         "@sveltejs/adapter-static": "^3.0.10",
-        "@sveltejs/kit": "^2.61.1",
+        "@sveltejs/kit": "^2.66.0",
         "@sveltejs/vite-plugin-svelte": "^7.1.2",
+        "@tailwindcss/vite": "^4.3.1",
         "@tauri-apps/cli": "^2.11.2",
-        "@types/node": "^25.9.1",
+        "@types/node": "^25.9.3",
+        "@vitest/browser-playwright": "^4.1.9",
+        "@vitest/coverage-v8": "^4.1.9",
         "codemirror": "^6.0.2",
-        "svelte": "^5.55.9",
-        "svelte-check": "^4.4.8",
-        "typescript": "~6.0.3",
-        "vite": "~8.0.14"
+        "playwright": "^1.61.0",
+        "prettier": "^3.8.4",
+        "prettier-plugin-svelte": "^4.1.1",
+        "prettier-plugin-tailwindcss": "^0.8.0",
+        "storybook": "^10.4.6",
+        "svelte": "^5.56.3",
+        "svelte-check": "^4.6.0",
+        "tailwindcss": "^4.3.1",
+        "typescript": "^6.0.3",
+        "vite": "~8.0.16",
+        "vitest": "^4.1.9"
     },
     "prettier": {
+        "plugins": [
+            "prettier-plugin-tailwindcss",
+            "prettier-plugin-svelte"
+        ],
+        "overrides": [
+            {
+                "files": "*.svelte",
+                "options": {
+                    "parser": "svelte"
+                }
+            }
+        ],
         "bracketSameLine": true,
         "bracketSpacing": true,
         "endOfLine": "crlf",
@@ -54,5 +84,6 @@
         "tabWidth": 4,
         "trailingComma": "es5",
         "useTabs": false
-    }
+    },
+    "packageManager": "pnpm@11.5.0+sha512.dbfcc4f81cf48597afd4bc391ffdf12c11f1a9fb83a395bfa6b0a2d9cc2fd8ffebafdb1ccbd529632153f793904c2615b7f09fe1a345473fd1c35845172a8eb1"
 }

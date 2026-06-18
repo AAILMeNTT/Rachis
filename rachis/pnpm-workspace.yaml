@@ -1,3 +1,7 @@
+allowBuilds:
+  esbuild: true
 minimumReleaseAgeExclude:
   - vite@8.0.14
   - '@sveltejs/kit@2.61.0'
+  - '@sveltejs/kit@2.66.0'
+  - '@lucide/svelte@1.21.0'

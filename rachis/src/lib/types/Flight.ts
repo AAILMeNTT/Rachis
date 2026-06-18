@@ -6,27 +6,33 @@
  *
  * # Fields
  *
- * * `id` - The unique identifier for the Flight.
- * * `name` - The name given by the user to the Flight.
- * * `created_at` - The time the Flight was created.
- * * `updated_at` - The time the Flight was last updated.
+ * - `id`: [Uuid] - The unique identifier for the Flight.
+ * - `name`: [String] - The name given by the user to the Flight.
+ * - `created_at`: [DateTime<Utc>] - The time the Flight was created.
+ * - `updated_at`: [DateTime<Utc>] - The time the Flight was last updated.
+ * - `is_favorite`: [bool] - Whether this Flight is favourited by the user.
  *
  * TODO: Develop better documentation for Flight struct
  */
-export type Flight = { 
-/**
- * Unique identifier for the Flight
- */
-id: string, 
-/**
- * A name given by the user to the Flight
- */
-name: string, 
-/**
- * The time the Flight was created
- */
-created_at: string, 
-/**
- * The time the Flight was last updated
- */
-updated_at: string, };
+export type Flight = {
+    /**
+     * Unique identifier for the Flight
+     */
+    id: string;
+    /**
+     * A name given by the user to the Flight
+     */
+    name: string;
+    /**
+     * The time the Flight was created
+     */
+    created_at: string;
+    /**
+     * The time the Flight was last updated
+     */
+    updated_at: string;
+    /**
+     * Whether this Flight is favourited by the user
+     */
+    is_favorite: boolean;
+};

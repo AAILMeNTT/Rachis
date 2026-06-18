@@ -10,10 +10,11 @@ use uuid::Uuid;
 ///
 /// # Fields
 ///
-/// * `id`: [Uuid] - The unique identifier for the Flight.
-/// * `name`: [String] - The name given by the user to the Flight.
-/// * `created_at`: [DateTime<Utc>] - The time the Flight was created.
-/// * `updated_at`: [DateTime<Utc>] - The time the Flight was last updated.
+/// - `id`: [Uuid] - The unique identifier for the Flight.
+/// - `name`: [String] - The name given by the user to the Flight.
+/// - `created_at`: [DateTime<Utc>] - The time the Flight was created.
+/// - `updated_at`: [DateTime<Utc>] - The time the Flight was last updated.
+/// - `is_favorite`: [bool] - Whether this Flight is favourited by the user.
 ///
 /// TODO: Develop better documentation for Flight struct
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, TS)]
@@ -27,14 +28,16 @@ pub struct Flight {
     pub created_at: DateTime<Utc>,
     /// The time the Flight was last updated
     pub updated_at: DateTime<Utc>,
+    /// Whether this Flight is favourited by the user
+    pub is_favorite: bool,
 }
 
 /// Implementation of the Flight struct
 ///
 /// # Functions
 ///
-/// * [new()](Flight::new) - Creates a new Flight with the given name.
-/// * [update_name()](Flight::update_name) - Updates the Flight's name and modification timestamp
+/// - [new()](Flight::new) - Creates a new Flight with the given name.
+/// - [update_name()](Flight::update_name) - Updates the Flight's name and modification timestamp
 ///
 /// # Examples
 ///
@@ -44,7 +47,7 @@ impl Flight {
     ///
     /// # Arguments
     ///
-    /// * `name: String` - The name of the [Flight](Flight).
+    /// - `name: String` - The name of the [Flight](Flight).
     ///
     /// # Returns
     ///
@@ -63,6 +66,7 @@ impl Flight {
             name,
             created_at: now,
             updated_at: now,
+            is_favorite: false,
         }
     }
 
@@ -72,7 +76,7 @@ impl Flight {
     ///
     /// # Arguments
     ///
-    /// * `new_name: String` - The new name of the Flight
+    /// - `new_name`: [String] - The new name of the Flight
     ///
     /// # Examples
     ///
@@ -105,24 +109,24 @@ impl Flight {
 ///
 /// ## Generic Rachis Types
 ///
-/// * [RachisType::ACT](RachisType::ACT) - An Act Rachis. Conceptualised as the largest unit of the story, encapsulating multiple arcs.
-/// * [RachisType::ARC](RachisType::ARC) - An Arc Rachis. Conceptualised as a collection of Scenes and comprise a character's journey through the story.
-/// * [RachisType::SCENE](RachisType::SCENE) - A Scene Rachis. Conceptualised as a specific event or moment during the story.
-/// * [RachisType::DEFAULT](RachisType::DEFAULT) - A default Rachis
+/// - [RachisType::ACT](RachisType::ACT) - An Act Rachis. Conceptualised as the largest unit of the story, encapsulating multiple arcs.
+/// - [RachisType::ARC](RachisType::ARC) - An Arc Rachis. Conceptualised as a collection of Scenes and comprise a character's journey through the story.
+/// - [RachisType::SCENE](RachisType::SCENE) - A Scene Rachis. Conceptualised as a specific event or moment during the story.
+/// - [RachisType::DEFAULT](RachisType::DEFAULT) - A default Rachis
 ///
 /// ## Entity Rachis Types
 ///
-/// * [RachisType::CHARACTER](RachisType::CHARACTER) - A Character Rachis. Conceptualised as a specific person, character, or otherwise entity in the story.
-/// * [RachisType::EVENT](RachisType::EVENT) - An Event Rachis. Conceptualised as a specific happenstance in the story.
-/// * [RachisType::LOCATION](RachisType::LOCATION) - A Location Rachis. Conceptualised as a specific place or area in the story.
-/// * [RachisType::ITEM](RachisType::ITEM) - An Item Rachis. Conceptualised as a specific object or thing in the story.
-/// * [RachisType::NOTE](RachisType::NOTE) - A Note Rachis. Conceptualised as a author-level commentary or note on the story.
+/// - [RachisType::CHARACTER](RachisType::CHARACTER) - A Character Rachis. Conceptualised as a specific person, character, or otherwise entity in the story.
+/// - [RachisType::EVENT](RachisType::EVENT) - An Event Rachis. Conceptualised as a specific happenstance in the story.
+/// - [RachisType::LOCATION](RachisType::LOCATION) - A Location Rachis. Conceptualised as a specific place or area in the story.
+/// - [RachisType::ITEM](RachisType::ITEM) - An Item Rachis. Conceptualised as a specific object or thing in the story.
+/// - [RachisType::NOTE](RachisType::NOTE) - A Note Rachis. Conceptualised as a author-level commentary or note on the story.
 ///
 /// # Functions
 ///
-/// * [as_str()](RachisType::as_str) - Returns the string representation of the [RachisType].
-/// * [from_str()](RachisType::from_str) - Returns a [RachisType] from a string representation.
-#[derive(Debug, Clone, Eq, PartialEq, serde::Serialize, serde::Deserialize, TS)]
+/// - [as_str()](RachisType::as_str) - Returns the string representation of the [RachisType].
+/// - [from_str()](RachisType::from_str) - Returns a [RachisType] from a string representation.
+#[derive(Debug, Clone, Eq, PartialEq, serde::Serialize, serde::Deserialize, TS, Default)]
 #[ts(export, repr(enum = name))]
 pub enum RachisType {
     // Generic Rachis types
@@ -134,6 +138,7 @@ pub enum RachisType {
     /// A Scene [Rachis]. Conceptualised as a specific event or moment during the story.
     SCENE,
     /// A default [Rachis]
+    #[default]
     DEFAULT,
 
     // Entity Rachis types
@@ -155,7 +160,7 @@ impl RachisType {
     ///
     /// # Returns
     ///
-    /// * `&'static str` - The string representation of the [RachisType].
+    /// - `&'static str` - The string representation of the [RachisType].
     ///
     /// # Examples
     ///
@@ -178,11 +183,11 @@ impl RachisType {
     ///
     /// # Arguments
     ///
-    /// * `s`: &[str] - The string to create the [RachisType] from.
+    /// - `s`: &[str] - The string to create the [RachisType] from.
     ///
     /// # Returns
     ///
-    /// * [Result]<[RachisType], [String]> - The [RachisType] created from the string, or an error message if the string is invalid.
+    /// - [Result]<[RachisType], [String]> - The [RachisType] created from the string, or an error message if the string is invalid.
     ///
     /// # Examples
     ///
@@ -209,32 +214,26 @@ impl Display for RachisType {
     }
 }
 
-impl Default for RachisType {
-    fn default() -> Self {
-        RachisType::DEFAULT
-    }
-}
-
 /// Defines the structure for a Rachis object.
 ///
 /// # Fields
 ///
-/// * `id`: [Uuid] - The unique identifier for the Rachis.
-/// * `flight_id`: [Uuid] - The ID of the Flight that this Rachis belongs to.
-/// * `title`: [String] - The title of the Rachis.
-/// * `content`: [String] - The content of the Rachis.
-/// * `r#type`: [RachisType] - The type of the Rachis.
-/// * `path`: [String] - The path of the Rachis.
-/// * `created_at`: [DateTime<Utc>] - The time the Rachis was created.
-/// * `updated_at`: [DateTime<Utc>] - The time the Rachis was last updated.
-/// * `word_count`: [usize] - The word count of the Rachis.
+/// - `id`: [Uuid] - The unique identifier for the Rachis.
+/// - `flight_id`: [Uuid] - The ID of the Flight that this Rachis belongs to.
+/// - `title`: [String] - The title of the Rachis.
+/// - `content`: [String] - The content of the Rachis.
+/// - `r#type`: [RachisType] - The type of the Rachis.
+/// - `path`: [String] - The path of the Rachis.
+/// - `created_at`: [DateTime<Utc>] - The time the Rachis was created.
+/// - `updated_at`: [DateTime<Utc>] - The time the Rachis was last updated.
+/// - `word_count`: [usize] - The word count of the Rachis.
 ///
 /// # Functions
 ///
-/// * [new()](Rachis::new) - Creates a new Rachis.
-/// * [update_name()](Rachis::update_name) - Updates the name of the Rachis.
-/// * [update_content()](Rachis::update_content) - Updates the content of the Rachis.
-/// * [word_count()](Rachis::word_count) - Updates the word count of the Rachis.
+/// - [new()](Rachis::new) - Creates a new Rachis.
+/// - [update_name()](Rachis::update_name) - Updates the name of the Rachis.
+/// - [update_content()](Rachis::update_content) - Updates the content of the Rachis.
+/// - [word_count()](Rachis::word_count) - Updates the word count of the Rachis.
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, TS)]
 #[ts(export)]
 pub struct Rachis {
@@ -264,10 +263,10 @@ impl Rachis {
     ///
     /// # Arguments
     ///
-    /// * `flight_id`: [Uuid] - The ID of the Flight that this Rachis belongs to.
-    /// * `title`: [String] - The title of the Rachis.
-    /// * `r#type`: [RachisType] - The type of the Rachis.
-    /// * `path`: [String] - The path of the Rachis.
+    /// - `flight_id`: [Uuid] - The ID of the Flight that this Rachis belongs to.
+    /// - `title`: [String] - The title of the Rachis.
+    /// - `r#type`: [RachisType] - The type of the Rachis.
+    /// - `path`: [String] - The path of the Rachis.
     ///
     /// # Returns
     ///
@@ -304,7 +303,7 @@ impl Rachis {
     ///
     /// # Arguments
     ///
-    /// * `title`: [String] - The new title of the Rachis.
+    /// - `title`: [String] - The new title of the Rachis.
     ///
     /// # Returns
     ///
@@ -332,11 +331,11 @@ impl Rachis {
     ///
     /// # Arguments
     ///
-    /// * `new_content`: [String] - The new content of the Rachis.
+    /// - `new_content`: [String] - The new content of the Rachis.
     ///
     /// # Returns
     ///
-    /// * [Result]<(), [String]> - Returns an error if content is empty, otherwise returns Ok(()).
+    /// - [Result]<(), [String]> - Returns an error if content is empty, otherwise returns Ok(()).
     ///
     /// # Examples
     ///
@@ -353,13 +352,13 @@ impl Rachis {
     ///
     /// # Returns
     ///
-    /// * `usize` - The word count of this Rachis.
+    /// - `usize` - The word count of this Rachis.
     ///
     /// # Examples
     ///
     /// TODO: Generate examples for Rachis::word_count()
     pub fn word_count(&mut self) -> usize {
-        self.content.trim().split_whitespace().count()
+        self.content.split_whitespace().count()
     }
 }
 

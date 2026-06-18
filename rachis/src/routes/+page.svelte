@@ -1,7 +1,14 @@
 <script lang="ts">
+    import { onMount } from "svelte";
+    import { landingStore } from "$lib/stores/landing.svelte";
+    import App from "$lib/components/layout/App.svelte";
+
+    onMount((): void => {
+        landingStore.loadAll();
+    });
 </script>
 
-<main>
+<!-- <main>
     <ul>
         <li>
             {#if import.meta.env.DEV}
@@ -14,4 +21,5 @@
             <a href="./dev/widget-test/editor">To Editor Widget Test</a>
         </li>
     </ul>
-</main>
+</main> -->
+<App />

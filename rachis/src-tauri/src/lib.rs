@@ -1,14 +1,21 @@
 mod domain;
+mod registry;
 mod storage;
 mod tag;
 
 use domain::{Flight, Rachis, RachisType};
+use registry::{Registry, RegistryEntry};
+use std::path::PathBuf;
 use std::sync::{Mutex, MutexGuard};
 use storage::Database;
 use tauri::{Manager, State};
+use uuid::Uuid;
 
 struct AppData {
     db: Mutex<storage::Database>,
+    registry: Mutex<registry::Registry>,
+    /// Directory where registry.json lives — needed for disk persistence
+    registry_dir: PathBuf,
 }
 
 /// Parses a tag and returns the parsed tag.
@@ -29,15 +36,12 @@ fn parse_tag(input: &str) -> Option<tag::Tag> {
 // #[tauri::command(rename_all = "snake_case")]
 // fn delete_project(path: &str) -> Result<(), String> {}
 
-// ———————— Rachis CRUD ————————
+// ———————— Flight CRUD ————————
 
 /// Returns the Flight from the database.
 #[tauri::command(rename_all = "snake_case")]
 fn get_flight(state: State<AppData>) -> Result<Option<Flight>, String> {
-    // Get a mutable reference to the database
     let db: MutexGuard<'_, Database> = state.db.lock().unwrap();
-
-    // Get the requested Flight
     db.get_flight().map_err(|e: rusqlite::Error| e.to_string())
 }
 
@@ -56,22 +60,16 @@ fn create_flight(state: State<AppData>, name: String) -> Result<Flight, String> 
 /// Updates the Flight in the database.
 #[tauri::command(rename_all = "snake_case")]
 fn update_flight(state: State<AppData>, flight: Flight) -> Result<(), String> {
-    // Get a mutable reference to the database
     let db: MutexGuard<'_, Database> = state.db.lock().unwrap();
 
-    // Currently the only thing that users can update about a Flight is the name, so right now
-    // this is a bit overkill. However, this also means that I theoretically never have to look
-    // at this again
     db.update_flight(&flight)
         .map_err(|e: rusqlite::Error| e.to_string())
 }
 
 /// Deletes the Flight from the database.
 #[tauri::command(rename_all = "snake_case")]
-fn delete_flight(state: State<AppData>, id: uuid::Uuid) -> Result<(), String> {
-    // Get a mutable reference to the database
+fn delete_flight(state: State<AppData>, id: Uuid) -> Result<(), String> {
     let db: MutexGuard<'_, Database> = state.db.lock().unwrap();
-
     db.delete_flight(&id)
         .map_err(|e: rusqlite::Error| e.to_string())
 }
@@ -80,7 +78,7 @@ fn delete_flight(state: State<AppData>, id: uuid::Uuid) -> Result<(), String> {
 
 /// Gets a Rachis from the database.
 #[tauri::command(rename_all = "snake_case")]
-fn get_rachis_by_id(state: State<AppData>, id: uuid::Uuid) -> Result<Option<Rachis>, String> {
+fn get_rachis_by_id(state: State<AppData>, id: Uuid) -> Result<Option<Rachis>, String> {
     let db: MutexGuard<'_, Database> = state.db.lock().unwrap();
     db.get_rachis_by_id(&id)
         .map_err(|e: rusqlite::Error| e.to_string())
@@ -118,13 +116,11 @@ fn create_rachis(
 ) -> Result<Rachis, String> {
     let db: MutexGuard<'_, Database> = state.db.lock().unwrap();
 
-    // Get the flight from the project database
     let flight: Flight = db
         .get_flight()
         .map_err(|e: rusqlite::Error| e.to_string())?
         .ok_or("No flight exists. Create a Flight first.")?;
 
-    // Build the full Rachis
     let rachis: Rachis = Rachis::new(
         flight.id,
         title,
@@ -144,53 +140,144 @@ fn create_rachis(
 fn update_rachis(state: State<AppData>, rachis: Rachis) -> Result<(), String> {
     let db: MutexGuard<'_, Database> = state.db.lock().unwrap();
 
-    // We need to make sure that the Rachis actually exists in the database
     let _update_rachis: Rachis = db
         .get_rachis_by_id(&rachis.id)
         .map_err(|e: rusqlite::Error| e.to_string())?
         .ok_or("Rachis not found")?;
 
-    // And now we can update the Rachis
     db.update_rachis(&_update_rachis.id, &rachis)
         .map_err(|e: rusqlite::Error| e.to_string())
 }
 
 /// Deletes a Rachis from the database.
 #[tauri::command(rename_all = "snake_case")]
-fn delete_rachis(state: State<AppData>, id: uuid::Uuid) -> Result<(), String> {
+fn delete_rachis(state: State<AppData>, id: Uuid) -> Result<(), String> {
     let db: MutexGuard<'_, Database> = state.db.lock().unwrap();
     db.delete_rachis(id)
         .map_err(|e: rusqlite::Error| e.to_string())
+}
+
+// ———————— Registry Commands ————————
+
+/// Lists all Flights in the registry.
+#[tauri::command(rename_all = "snake_case")]
+fn list_registry_flights(state: State<AppData>) -> Result<Vec<RegistryEntry>, String> {
+    let registry: MutexGuard<'_, Registry> = state.registry.lock().unwrap();
+    Ok(registry.list().to_vec())
+}
+
+/// Returns a single Flight from the registry by ID.
+#[tauri::command(rename_all = "snake_case")]
+fn get_registry_flight(state: State<AppData>, id: Uuid) -> Result<Option<RegistryEntry>, String> {
+    let registry: MutexGuard<'_, Registry> = state.registry.lock().unwrap();
+    Ok(registry.get(&id).cloned())
+}
+
+/// Adds a new Flight to the registry and persists to disk.
+#[tauri::command(rename_all = "snake_case")]
+fn add_registry_flight(
+    state: State<AppData>,
+    name: String,
+    path: String,
+) -> Result<RegistryEntry, String> {
+    let mut registry: MutexGuard<'_, Registry> = state.registry.lock().unwrap();
+    let entry: RegistryEntry = registry.add(name, path)?;
+    registry::save_to_disk(&state.registry_dir, &registry)?;
+    Ok(entry)
+}
+
+/// Removes a Flight from the registry by ID and persists to disk.
+#[tauri::command(rename_all = "snake_case")]
+fn remove_registry_flight(state: State<AppData>, id: Uuid) -> Result<bool, String> {
+    let mut registry: MutexGuard<'_, Registry> = state.registry.lock().unwrap();
+    let removed: bool = registry.remove(&id);
+    if removed {
+        registry::save_to_disk(&state.registry_dir, &registry)?;
+    }
+    Ok(removed)
+}
+
+/// Toggles the favourite status of a Flight and persists to disk.
+#[tauri::command(rename_all = "snake_case")]
+fn toggle_registry_flight_favorite(state: State<AppData>, id: Uuid) -> Result<bool, String> {
+    let mut registry: MutexGuard<'_, Registry> = state.registry.lock().unwrap();
+    let new_status: bool = registry.toggle_favorite(&id)?;
+    registry::save_to_disk(&state.registry_dir, &registry)?;
+    Ok(new_status)
+}
+
+/// Searches Flights in the registry by name (case-insensitive, partial match).
+#[tauri::command(rename_all = "snake_case")]
+fn search_registry_flights(
+    state: State<AppData>,
+    query: String,
+) -> Result<Vec<RegistryEntry>, String> {
+    let registry: MutexGuard<'_, Registry> = state.registry.lock().unwrap();
+    Ok(registry.search(&query).into_iter().cloned().collect())
+}
+
+/// Returns the most recently opened Flight from the registry.
+#[tauri::command(rename_all = "snake_case")]
+fn get_most_recent_flight(state: State<AppData>) -> Result<Option<RegistryEntry>, String> {
+    let registry: MutexGuard<'_, Registry> = state.registry.lock().unwrap();
+    Ok(registry.most_recent().cloned())
+}
+
+/// Returns registry summary stats (total flights, total word count).
+#[tauri::command(rename_all = "snake_case")]
+fn get_registry_stats(state: State<AppData>) -> Result<(usize, usize), String> {
+    let registry: MutexGuard<'_, Registry> = state.registry.lock().unwrap();
+    Ok((registry.count(), registry.total_word_count()))
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .setup(|app: &mut tauri::App| {
-            // Get the app directory and ensure it exists
-            let app_dir: std::path::PathBuf = app.path().app_data_dir()?;
+            let app_dir: PathBuf = app.path().app_data_dir()?;
             std::fs::create_dir_all(&app_dir).expect("Failed to create app directory");
 
-            // Append the database path and open
-            let db_path: std::path::PathBuf = app_dir.join("rachis.db");
-            let db: Database = Database::open(&db_path.to_str().unwrap()) // TODO: Use db_path when ready
-                .expect("Failed to open database");
-            app.manage(AppData { db: Mutex::new(db) });
+            // Open the database (single-file mode for right now, will change to read from registry later probably)
+            let db_path: PathBuf = app_dir.join("rachis.db");
+            let db: Database =
+                Database::open(db_path.to_str().unwrap()).expect("Failed to open database");
+
+            // Load (or create) the Flight registry
+            let registry: Registry =
+                registry::load_from_disk(&app_dir).expect("Failed to load registry");
+
+            app.manage(AppData {
+                db: Mutex::new(db),
+                registry: Mutex::new(registry),
+                registry_dir: app_dir,
+            });
             Ok(())
         })
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
+            // Registry commands
+            add_registry_flight,
+            get_registry_flight,
+            get_registry_stats,
+            list_registry_flights,
+            remove_registry_flight,
+            search_registry_flights,
+            toggle_registry_flight_favorite,
+            // Flight commands
+            create_flight,
             delete_flight,
-            delete_rachis,
             get_flight,
+            get_most_recent_flight,
+            update_flight,
+            // Rachis commands
+            create_rachis,
+            delete_rachis,
             get_rachis_by_id,
             get_rachises_by_title,
             get_rachises_by_type,
-            create_flight,
-            create_rachis,
-            parse_tag,
-            update_flight,
             update_rachis,
+            // Misc
+            parse_tag,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

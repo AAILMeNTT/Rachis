@@ -14,11 +14,11 @@ impl Database {
     ///
     /// # Arguments
     ///
-    /// * `path: &str` - The path to the database file.
+    /// - `path: &str` - The path to the database file.
     ///
     /// # Returns
     ///
-    /// * `Result<Database>` - The Database struct, or an error if the connection fails.
+    /// - `Result<Database>` - The Database struct, or an error if the connection fails.
     ///
     /// # Examples
     ///
@@ -30,7 +30,8 @@ impl Database {
                 id TEXT PRIMARY KEY,
                 name TEXT NOT NULL,
                 created_at INTEGER NOT NULL,
-                updated_at INTEGER NOT NULL
+                updated_at INTEGER NOT NULL,
+                is_favorite BOOLEAN NOT NULL DEFAULT 0
             )",
             (),
         )?;
@@ -58,15 +59,15 @@ impl Database {
     ///
     /// # Returns
     ///
-    /// * `Result<Flight>` - The Flight struct, or an error if the query fails.
+    /// - `Result<Flight>` - The Flight struct, or an error if the query fails.
     ///
     /// # Examples
     ///
     /// TODO: Generate examples for Database::get_flight()
     pub fn get_flight(&self) -> Result<Option<Flight>, Error> {
-        let mut statement: CachedStatement<'_> = self
-            .conn
-            .prepare_cached("SELECT id, name, created_at, updated_at FROM flight LIMIT 1")?;
+        let mut statement: CachedStatement<'_> = self.conn.prepare_cached(
+            "SELECT id, name, created_at, updated_at, is_favorite FROM flight LIMIT 1",
+        )?;
 
         let flight: Result<Flight, Error> = statement.query_row([], |row: &Row<'_>| {
             // Get the values of each column
@@ -74,6 +75,7 @@ impl Database {
             let name: String = row.get("name")?; // name
             let created_at_timestamp: i64 = row.get("created_at")?; // created_at
             let updated_at_timestamp: i64 = row.get("updated_at")?; // updated_at
+            let is_favorite: bool = row.get("is_favorite")?; // is_favorite
 
             // Convert to Uuid, returning a conversion error on failure
             let id: Uuid = Uuid::parse_str(&id_str)
@@ -95,6 +97,7 @@ impl Database {
                 name,
                 created_at,
                 updated_at,
+                is_favorite,
             })
         });
 
@@ -109,7 +112,7 @@ impl Database {
     ///
     /// # Arguments
     ///
-    /// * `flight: &Flight` - The Flight to insert.
+    /// - `flight: &Flight` - The Flight to insert.
     ///
     /// # Examples
     ///
@@ -119,7 +122,7 @@ impl Database {
             "INSERT INTO flight (id, name, created_at, updated_at) VALUES (?1, ?2, ?3, ?4)",
         )?;
 
-        statement.execute(&[
+        statement.execute([
             &flight.id.to_string(),
             &flight.name,
             &flight.created_at.timestamp().to_string(),
@@ -133,7 +136,7 @@ impl Database {
     ///
     /// # Arguments
     ///
-    /// * `flight: &Flight` - The Flight to update.
+    /// - `flight: &Flight` - The Flight to update.
     ///
     /// # Examples
     ///
@@ -148,7 +151,7 @@ impl Database {
 
         // As of right now, the only thing the user can update about a Flight is its name
         // updated_at is automatically managed, and both the id and created_at should be immutable
-        statement.execute(&[
+        statement.execute([
             &flight.name,
             &Utc::now().timestamp().to_string(),
             &curr_flight.id.to_string(),
@@ -161,7 +164,7 @@ impl Database {
     ///
     /// # Arguments
     ///
-    /// * `id: &Uuid` - The ID of the Flight to delete.
+    /// - `id: &Uuid` - The ID of the Flight to delete.
     ///
     /// # Examples
     ///
@@ -170,7 +173,7 @@ impl Database {
         let mut statement: CachedStatement<'_> = self
             .conn
             .prepare_cached("DELETE FROM flight WHERE id = ?1")?;
-        statement.execute(&[&id.to_string()])?;
+        statement.execute([&id.to_string()])?;
         Ok(())
     }
 
@@ -180,15 +183,15 @@ impl Database {
     ///
     /// # Arguments
     ///
-    /// * `id_str: String` - The ID of the [Rachis].
-    /// * `flight_id_str: String` - The ID of the [Flight] that the [Rachis] belongs to.
-    /// * `title: String` - The title of the [Rachis].
-    /// * `content: String` - The content of the [Rachis].
-    /// * `type_str: String` - The type of the [Rachis].
-    /// * `path: String` - The path of the [Rachis].
-    /// * `created_at_timestamp: i64` - The timestamp of when the [Rachis] was created.
-    /// * `updated_at_timestamp: i64` - The timestamp of when the [Rachis] was last updated.
-    /// * `word_count: i64` - The word count of the [Rachis].
+    /// - `id_str: String` - The ID of the [Rachis].
+    /// - `flight_id_str: String` - The ID of the [Flight] that the [Rachis] belongs to.
+    /// - `title: String` - The title of the [Rachis].
+    /// - `content: String` - The content of the [Rachis].
+    /// - `type_str: String` - The type of the [Rachis].
+    /// - `path: String` - The path of the [Rachis].
+    /// - `created_at_timestamp: i64` - The timestamp of when the [Rachis] was created.
+    /// - `updated_at_timestamp: i64` - The timestamp of when the [Rachis] was last updated.
+    /// - `word_count: i64` - The word count of the [Rachis].
     ///
     /// # Returns
     ///
@@ -246,7 +249,7 @@ impl Database {
     ///
     /// # Arguments
     ///
-    /// * `id: &Uuid` - The ID of the [Rachis] to retrieve.
+    /// - `id: &Uuid` - The ID of the [Rachis] to retrieve.
     ///
     /// # Returns
     ///
@@ -261,7 +264,7 @@ impl Database {
             .prepare_cached("SELECT * FROM rachises WHERE id = ?1")?;
 
         let result: Result<Rachis, Error> =
-            statement.query_row(&[&id.to_string()], |row: &Row<'_>| {
+            statement.query_row([&id.to_string()], |row: &Row<'_>| {
                 Self::_query_row_rachis(
                     row.get("id")?,
                     row.get("flight_id")?,
@@ -286,7 +289,7 @@ impl Database {
     ///
     /// # Arguments
     ///
-    /// * `title` - The title to search for.
+    /// - `title` - The title to search for.
     ///
     /// # Returns
     ///
@@ -313,16 +316,16 @@ impl Database {
         };
 
         // If the title is None, return all Rachises in the Flight
-        if title.is_none() {
+        if let Some(title_string) = title {
+            statement = self.conn.prepare_cached(
+                "SELECT * FROM rachises WHERE title = ?1 ORDER BY created_at DESC",
+            )?;
+            result = statement.query_map([&title_string], f)?;
+        } else {
             statement = self
                 .conn
                 .prepare_cached("SELECT * FROM rachises ORDER BY created_at DESC")?;
             result = statement.query_map([], f)?;
-        } else {
-            statement = self.conn.prepare_cached(
-                "SELECT * FROM rachises WHERE title = ?1 ORDER BY created_at DESC",
-            )?;
-            result = statement.query_map(&[&title.unwrap().to_string()], f)?;
         }
         let result: Vec<Rachis> = result.collect::<Result<Vec<Rachis>, Error>>()?;
         println!("Result: {:?}", result);
@@ -334,7 +337,7 @@ impl Database {
     ///
     /// # Returns
     ///
-    /// * `Result<Vec<Rachis>, Error>` - Returns a vector of [Rachis] if successful, or an error if not.
+    /// - `Result<Vec<Rachis>, Error>` - Returns a vector of [Rachis] if successful, or an error if not.
     ///
     /// # Examples
     ///
@@ -375,11 +378,11 @@ impl Database {
     ///
     /// # Arguments
     ///
-    /// * `rachis: &Rachis` - The [Rachis] to insert into the database.
+    /// - `rachis: &Rachis` - The [Rachis] to insert into the database.
     ///
     /// # Returns
     ///
-    /// * `Result<(), Error>` - Returns Ok if successful, or an error if not.
+    /// - `Result<(), Error>` - Returns Ok if successful, or an error if not.
     ///
     /// # Examples
     ///
@@ -389,7 +392,7 @@ impl Database {
             .conn
             .prepare_cached("INSERT INTO rachises (id, flight_id, title, content, type, path, created_at, updated_at, word_count) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)")?;
 
-        statement.execute(&[
+        statement.execute([
             &rachis.id.to_string(),
             &rachis.flight_id.to_string(),
             &rachis.title,
@@ -408,11 +411,11 @@ impl Database {
     ///
     /// # Arguments
     ///
-    /// * `rachises`: &[Rachis] - The Rachises to insert.
+    /// - `rachises`: &[Rachis] - The Rachises to insert.
     ///
     /// # Returns
     ///
-    /// * [Result]<(), [Error]> - Returns Ok if successful, or an error if not.
+    /// - [Result]<(), [Error]> - Returns Ok if successful, or an error if not.
     pub fn create_rachises(&self, rachises: &[Rachis]) -> Result<(), Error> {
         for rachis in rachises {
             self.create_rachis(rachis)?;
@@ -424,12 +427,12 @@ impl Database {
     ///
     /// # Arguments
     ///
-    /// * `id: &Uuid` - The ID of the [Rachis] to update.
-    /// * `new_rachis: &Rachis` - The new [Rachis] to update the existing [Rachis] with.
+    /// - `id: &Uuid` - The ID of the [Rachis] to update.
+    /// - `new_rachis: &Rachis` - The new [Rachis] to update the existing [Rachis] with.
     ///
     /// # Returns
     ///
-    /// * `Result<(), Error>` - Returns Ok if successful, or an error if not.
+    /// - `Result<(), Error>` - Returns Ok if successful, or an error if not.
     ///
     /// # Examples
     ///
@@ -448,7 +451,7 @@ impl Database {
         println!("Path: {}", new_rachis.path);
         println!("Word Count: {}", new_rachis.word_count);
 
-        statement.execute(&[
+        statement.execute([
             &new_rachis.title,
             &new_rachis.content,
             &new_rachis.r#type.to_string(),
@@ -465,11 +468,11 @@ impl Database {
     ///
     /// # Arguments
     ///
-    /// * `rachis_id: &Uuid` - The ID of the [Rachis] to delete.
+    /// - `rachis_id: &Uuid` - The ID of the [Rachis] to delete.
     ///
     /// # Returns
     ///
-    /// * `Result<(), Error>` - Returns Ok if successful, or an error if not.
+    /// - `Result<(), Error>` - Returns Ok if successful, or an error if not.
     ///
     /// # Examples
     ///
@@ -479,7 +482,7 @@ impl Database {
             .conn
             .prepare_cached("DELETE FROM rachises WHERE id = ?1")?;
 
-        statement.execute(&[&rachis_id.to_string()])?;
+        statement.execute([&rachis_id.to_string()])?;
 
         Ok(())
     }
@@ -868,7 +871,7 @@ mod tests {
         Ok(())
     }
 
-    /// Tests that a Rachis can be deleted from the Database
+    /// Tests that a [Rachis] can be deleted from the [Database]
     #[test]
     fn test_rachis_deletion() -> Result<(), Error> {
         // Generate a new Database
@@ -907,7 +910,7 @@ mod tests {
         Ok(())
     }
 
-    /// Tests that some/all Rachises can be retrieved from the Database
+    /// Tests that some/all [Rachises](Rachis) can be retrieved from the [Database]
     #[test]
     fn test_get_rachises() -> Result<(), Error> {
         // Generate a new Database
