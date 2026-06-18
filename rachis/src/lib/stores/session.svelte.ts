@@ -1,4 +1,5 @@
 import { type Rachis } from "$lib/types/Rachis";
+import { type Flight } from "$lib/types/Flight";
 import { invoke } from "@tauri-apps/api/core";
 
 class SessionStore {
@@ -11,6 +12,11 @@ class SessionStore {
      * The currently-loaded Rachis
      */
     current_rachis: Rachis | null = $state<Rachis | null>(null);
+
+    /**
+     * The current Flight
+     */
+    current_flight: Flight | null = $state<Flight | null>(null);
 
     /**
      * Retrieves Rachises based on the provided title
@@ -58,11 +64,15 @@ class SessionStore {
             :   null;
     }
 
+    /**
+     * Updates a Rachis in the database.
+     *
+     * @param rachis The Rachis to update
+     *
+     * @returns A Promise that resolves when the Rachis has been updated
+     */
     async updateRachis(rachis: Rachis): Promise<void> {
-        await invoke("update_rachis", {
-            rachis,
-        });
-
+        await invoke("update_rachis", { rachis });
         this.current_rachis = rachis;
     }
 }

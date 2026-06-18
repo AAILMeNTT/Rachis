@@ -1,0 +1,7 @@
+@theme {
+    --color-midnight-violet: oklch(0.2016 0.0725 302.03);
+    --color-lilac: oklch(0.5519 0.1226 308.98);
+    --color-wisteria: oklch(0.8073 0.0891 314.99);
+    --color-cornsilk: oklch(0.9637 0.033 99.54);
+    --color-white: oklch(1 0 0);
+}

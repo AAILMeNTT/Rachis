@@ -2,20 +2,41 @@
 
 /**
  * Defines the types of Rachises that may exist.
+ *
  * Rachis types come in primarily two groups: Generic Rachises and Entity Rachises.
  * Generic Rachis types are more meta and describe the story itself, while Entity Rachises
  * define some recognisable entity in the story.
  *
  * # Types
  *
- * * [RachisType::ACT](RachisType::ACT) - An Act Rachis. Conceptualised as the largest unit of the story, encapsulating multiple arcs.
- * * [RachisType::ARC](RachisType::ARC) - An Arc Rachis. Conceptualised as a collection of Scenes and comprise a character's journey through the story.
- * * [RachisType::SCENE](RachisType::SCENE) - A Scene Rachis. Conceptualised as a specific event or moment during the story.
- * * [RachisType::DEFAULT](RachisType::DEFAULT) - A default Rachis
- * * [RachisType::CHARACTER](RachisType::CHARACTER) - A Character Rachis. Conceptualised as a specific person, character, or otherwise entity in the story.
- * * [RachisType::EVENT](RachisType::EVENT) - An Event Rachis. Conceptualised as a specific happenstance in the story.
- * * [RachisType::LOCATION](RachisType::LOCATION) - A Location Rachis. Conceptualised as a specific place or area in the story.
- * * [RachisType::ITEM](RachisType::ITEM) - An Item Rachis. Conceptualised as a specific object or thing in the story.
- * * [RachisType::NOTE](RachisType::NOTE) - A Note Rachis. Conceptualised as a author-level commentary or note on the story.
+ * ## Generic Rachis Types
+ *
+ * - [RachisType::ACT](RachisType::ACT) - An Act Rachis. Conceptualised as the largest unit of the story, encapsulating multiple arcs.
+ * - [RachisType::ARC](RachisType::ARC) - An Arc Rachis. Conceptualised as a collection of Scenes and comprise a character's journey through the story.
+ * - [RachisType::SCENE](RachisType::SCENE) - A Scene Rachis. Conceptualised as a specific event or moment during the story.
+ * - [RachisType::DEFAULT](RachisType::DEFAULT) - A default Rachis
+ *
+ * ## Entity Rachis Types
+ *
+ * - [RachisType::CHARACTER](RachisType::CHARACTER) - A Character Rachis. Conceptualised as a specific person, character, or otherwise entity in the story.
+ * - [RachisType::EVENT](RachisType::EVENT) - An Event Rachis. Conceptualised as a specific happenstance in the story.
+ * - [RachisType::LOCATION](RachisType::LOCATION) - A Location Rachis. Conceptualised as a specific place or area in the story.
+ * - [RachisType::ITEM](RachisType::ITEM) - An Item Rachis. Conceptualised as a specific object or thing in the story.
+ * - [RachisType::NOTE](RachisType::NOTE) - A Note Rachis. Conceptualised as a author-level commentary or note on the story.
+ *
+ * # Functions
+ *
+ * - [as_str()](RachisType::as_str) - Returns the string representation of the [RachisType].
+ * - [from_str()](RachisType::from_str) - Returns a [RachisType] from a string representation.
  */
-export enum RachisType { "ACT" = "ACT", "ARC" = "ARC", "SCENE" = "SCENE", "DEFAULT" = "DEFAULT", "CHARACTER" = "CHARACTER", "EVENT" = "EVENT", "LOCATION" = "LOCATION", "ITEM" = "ITEM", "NOTE" = "NOTE" }
+export enum RachisType {
+    "ACT" = "ACT",
+    "ARC" = "ARC",
+    "SCENE" = "SCENE",
+    "DEFAULT" = "DEFAULT",
+    "CHARACTER" = "CHARACTER",
+    "EVENT" = "EVENT",
+    "LOCATION" = "LOCATION",
+    "ITEM" = "ITEM",
+    "NOTE" = "NOTE",
+}

@@ -26,14 +26,14 @@ pub struct Tag {
 ///
 /// # Functions
 ///
-/// * [Tag::validate_prefix](Tag::validate_prefix) - Validates the prefix of a tag.
-/// * [Tag::parse](Tag::parse) - Parses a tag.
+/// - [Tag::validate_prefix](Tag::validate_prefix) - Validates the prefix of a tag.
+/// - [Tag::parse](Tag::parse) - Parses a tag.
 impl Tag {
     /// Validates the prefix of a tag.
     ///
     /// # Returns
     ///
-    /// * `Result<(), String>` - Returns an error if the prefix is invalid, otherwise returns Ok(()).
+    /// - `Result<(), String>` - Returns an error if the prefix is invalid, otherwise returns Ok(()).
     ///
     /// # Examples
     ///
@@ -51,11 +51,11 @@ impl Tag {
     ///
     /// # Arguments
     ///
-    /// * `s: &str` - The tag to parse.
+    /// - `s: &str` - The tag to parse.
     ///
     /// # Returns
     ///
-    /// * `Option<Tag>` - Returns the parsed tag if successful, otherwise returns None.
+    /// - `Option<Tag>` - Returns the parsed tag if successful, otherwise returns None.
     ///
     /// # Examples
     ///
@@ -110,7 +110,7 @@ impl Tag {
             if escaped {
                 if is_display_text {
                     display_text.push(c);
-                } else if is_index && c.is_digit(10) {
+                } else if is_index && c.is_ascii_digit() {
                     index.push(c);
                 } else {
                     push_to_content = true;
@@ -171,7 +171,7 @@ impl Tag {
                     // Otherwise, simply push this character to the String
                     _ => {
                         // If the character is part of the index and is a digit, append to index string
-                        if is_index && c.is_digit(10) {
+                        if is_index && c.is_ascii_digit() {
                             index.push(c);
                         } else {
                             is_index = false;
