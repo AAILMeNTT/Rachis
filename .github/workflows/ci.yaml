@@ -1,0 +1,55 @@
+name: CI
+
+# Run whenever there's a push or pull request to the repo
+on:
+  push:
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest  # Arbitrary build platform
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust dependencies
+        uses: swatinem/rust-cache@v2
+
+      - name: Install frontend dependencies
+        run: pnpm install --frozen-lockfile
+        working-directory: rachis
+
+      - name: Typecheck Svelte
+        run: pnpm check
+        working-directory: rachis
+
+      - name: Build frontend
+        run: pnpm build
+        working-directory: rachis
+
+      - name: Check Rust formatting
+        run: cargo fmt --check
+        working-directory: rachis/src-tauri
+
+      - name: Run Clippy
+        run: cargo clippy
+        working-directory: rachis/src-tauri
+
+      - name: Run Rust tests
+        run: cargo test
+        working-directory: rachis/src-tauri
