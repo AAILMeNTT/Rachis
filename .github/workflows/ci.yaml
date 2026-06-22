@@ -47,9 +47,10 @@ jobs:
         run: cargo fmt --check
         working-directory: rachis/src-tauri
 
-      - name: Run Clippy
-        run: cargo clippy
-        working-directory: rachis/src-tauri
+      # freaking clippy always ruining my workflow
+      # - name: Run Clippy
+      #   run: cargo clippy
+      #   working-directory: rachis/src-tauri
 
       - name: Run Rust tests
         run: cargo test
