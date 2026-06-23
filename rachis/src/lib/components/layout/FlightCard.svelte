@@ -4,16 +4,15 @@
     import Trash2 from "@lucide/svelte/icons/trash";
     import { goto } from "$app/navigation";
     import { landingStore } from "$lib/stores/landing.svelte";
+    import { dialogs } from "$lib/stores/dialog.svelte";
     import type { RegistryEntry } from "$lib/types/RegistryEntry";
 
     interface Props {
         /** The Flight to display */
         flight: RegistryEntry;
-        /** Whether this card should render as the featured "Welcome Back" card */
-        isFeatured?: boolean;
     }
 
-    let { flight, isFeatured = false }: Props = $props();
+    let { flight }: Props = $props();
 
     // ——— Derived Values ———
 
@@ -22,7 +21,7 @@
         landingStore.mostRecent?.id === flight.id
     );
 
-    /** Human-readable "time since last edited" string */
+    /** "Time since last edited" string */
     let timeSinceEdited: string = $derived.by((): string => {
         const now: number = Date.now();
         const then: number = new Date(flight.last_opened_at).getTime();
@@ -49,27 +48,42 @@
         `${flight.word_count.toLocaleString()} words`
     );
 
-    // ——— Actions ———
-
+    /** Navigates to the Flight's workspace when clicked */
     function handleClick(): void {
         goto(`/workspace/${flight.id}`);
     }
 
+    /** Toggle the favorite status of the Flight */
     async function handleToggleFavorite(event: MouseEvent): Promise<void> {
-        // Stop the click from bubbling up to the card's click handler
+        // Stop the click from being handled by the card's click handler
         event.stopPropagation();
         await landingStore.toggleFavorite(flight.id);
     }
 
+    /** Removes the Flight from the landing store */
     async function handleRemove(event: MouseEvent): Promise<void> {
+        // Stop the click from being handled by the card's click handler
         event.stopPropagation();
-        // TODO: Add a confirmation dialog before removing
-        await landingStore.remove(flight.id);
+
+        // Pop up a ConfirmDialog to verify the user's action
+        const confirmed: boolean = await dialogs.confirm(
+            "Delete Flight",
+            `Are you sure you want to delete "${flight.name}"? This cannot be undone.`,
+            { confirmText: "Delete", severity: "destructive" }
+        );
+
+        // If confirmed, remove the Flight and display a NotifyDialog
+        if (confirmed) {
+            await landingStore.remove(flight.id);
+            dialogs.notify("Flight deleted", { severity: "success" });
+        }
     }
 
+    /** Opens the Flight settings dialog */
     function handleSettings(event: MouseEvent): void {
+        // Stop the click from being handled by the card's click handler
         event.stopPropagation();
-        // TODO: Open flight settings dialog
+        // TODO: actually open flight settings dialog
         console.log("Settings for:", flight.id);
     }
 </script>
@@ -126,6 +140,7 @@
                     "#00000000"
                 )} />
         </button>
+        <!-- TODO: would be nice if these buttons like pulsed a little on hover perhaps -->
         <button
             onclick={handleSettings}
             aria-label="Flight settings"
