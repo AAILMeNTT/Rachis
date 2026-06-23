@@ -1,9 +1,9 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use std::{fmt, fs};
 use std::path::Path;
-use uuid::Uuid;
+use std::{fmt, fs};
 use ts_rs::TS;
+use uuid::Uuid;
 
 // ============================================================================
 // Data Model (pure data + business logic — no I/O)
@@ -784,7 +784,7 @@ mod tests {
         assert_ne!(entry.created_at, DateTime::<Utc>::default());
         assert_eq!(entry.word_count, 0);
     }
-    
+
     /// Schedules a directory for cleanup after a test completes.
     /// Called explicitly rather than relying on Drop to avoid surprises.
     fn defer_cleanup(dir: &Path) {
