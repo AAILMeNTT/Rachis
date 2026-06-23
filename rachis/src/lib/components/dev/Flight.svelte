@@ -6,14 +6,14 @@
     let flight: Flight | null = $state(null);
     let errorMessage: string = $state("");
 
-    async function createFlight() {
+    async function createFlight(): Promise<void> {
         errorMessage = "";
         if (!flightName.trim()) {
             errorMessage = "Flight name cannot be empty";
             return;
         }
         try {
-            const result = await invoke<Flight>("create_flight", {
+            const result: Flight = await invoke<Flight>("create_flight", {
                 name: flightName,
             });
             flight = result;
@@ -24,10 +24,12 @@
         }
     }
 
-    async function getFlight() {
+    async function getFlight(): Promise<void> {
         errorMessage = "";
         try {
-            const result = await invoke<Flight | null>("get_flight");
+            const result: Flight | null = await invoke<Flight | null>(
+                "get_flight"
+            );
             flight = result;
         } catch (error) {
             errorMessage = String(error);
@@ -35,7 +37,7 @@
         }
     }
 
-    async function deleteFlight() {
+    async function deleteFlight(): Promise<void> {
         errorMessage = "";
         if (!flight) {
             errorMessage = "No flight loaded to delete";
@@ -59,7 +61,7 @@
     <div>
         <button onclick={createFlight}>Create New Flight</button>
         <button onclick={getFlight}>Get Flight</button>
-        <button onclick={() => (flightName = "")}>Reset</button>
+        <button onclick={(): string => (flightName = "")}>Reset</button>
         <button onclick={deleteFlight}>Delete Flight</button>
     </div>
     <div>

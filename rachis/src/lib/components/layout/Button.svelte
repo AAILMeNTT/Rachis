@@ -1,14 +1,16 @@
 <script lang="ts">
     import "$lib/styles/app.css";
-    import { landingStore } from "$lib/stores/landing.svelte";
 
     interface Props {
+        /** The text to display on the button */
         text: string;
+        /** The type of button to display */
         type: "primary" | "secondary" | "tertiary" | "disabled";
-        args: string[];
+        /** The function to call when the button is clicked */
+        onclick?: () => void;
     }
 
-    let { text, type, args }: Props = $props();
+    let { text, type, onclick }: Props = $props();
 
     let classNames: string = $derived.by((): string => {
         const bgClass: string =
@@ -22,21 +24,14 @@
 
         return `button w-45 h-9 rounded-xl ${bgClass} ${cursorClass}`;
     });
-
-    async function addRegistryFlight(name: string, path: string) {
-        return landingStore.add(name, path);
-    }
 </script>
 
 {#if type !== "disabled"}
-    <!--- TODO: when the button is clicked it should make a dialogue box not just do whatever -->
-    <button
-        class={classNames}
-        onclick={() => addRegistryFlight(args[0], args[1])}>
+    <button class={classNames} {onclick}>
         {text}
     </button>
 {:else}
-    <button class={classNames}>
+    <button class={classNames} disabled>
         {text}
     </button>
 {/if}
