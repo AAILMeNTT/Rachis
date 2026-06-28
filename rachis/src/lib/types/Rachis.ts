@@ -23,41 +23,40 @@ import type { RachisType } from "./RachisType";
  * - [update_content()](Rachis::update_content) - Updates the content of the Rachis.
  * - [word_count()](Rachis::word_count) - Updates the word count of the Rachis.
  */
-export type Rachis = {
-    /**
-     * The unique identifier for the Rachis.
-     */
-    id: string;
-    /**
-     * The ID of the Flight that this Rachis belongs to.
-     */
-    flight_id: string;
-    /**
-     * The title of the Rachis.
-     */
-    title: string;
-    /**
-     * The content of the Rachis.
-     */
-    content: string;
-    /**
-     * The type of the Rachis (see [RachisType]).
-     */
-    type: RachisType;
-    /**
-     * The path of the Rachis.
-     */
-    path: string;
-    /**
-     * The time the Rachis was created.
-     */
-    created_at: string;
-    /**
-     * The time the Rachis was last updated.
-     */
-    updated_at: string;
-    /**
-     * The word count of the Rachis.
-     */
-    word_count: number;
-};
+export type Rachis = { 
+/**
+ * The unique identifier for the Rachis.
+ */
+id: string, 
+/**
+ * The ID of the Flight that this Rachis belongs to.
+ */
+flight_id: string, 
+/**
+ * The title of the Rachis.
+ */
+title: string, 
+/**
+ * The content of the Rachis.
+ */
+content: string, 
+/**
+ * The type of the Rachis (see [RachisType]).
+ */
+type: RachisType, 
+/**
+ * The path of the Rachis.
+ */
+path: string, 
+/**
+ * The time the Rachis was created.
+ */
+created_at: string, 
+/**
+ * The time the Rachis was last updated.
+ */
+updated_at: string, 
+/**
+ * The word count of the Rachis.
+ */
+word_count: number, };

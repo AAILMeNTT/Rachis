@@ -112,7 +112,7 @@
         <div
             class="info
             w-full h-auto flex flex-row flex-nowrap items-center content-stretch justify-between px-2 py-1">
-            <p>v0.5.0</p>
+            <p>v0.6.0</p>
             <Moon />
         </div>
     </div>

@@ -16,13 +16,12 @@ import type { RegistryEntry } from "./RegistryEntry";
  * - All paths are non-empty
  * - No duplicate paths
  */
-export type Registry = {
-    /**
-     * Schema version for future migration support
-     */
-    version: number;
-    /**
-     * The list of registered Flights
-     */
-    flights: Array<RegistryEntry>;
-};
+export type Registry = { 
+/**
+ * Schema version for future migration support
+ */
+version: number, 
+/**
+ * The list of registered Flights
+ */
+flights: Array<RegistryEntry>, };

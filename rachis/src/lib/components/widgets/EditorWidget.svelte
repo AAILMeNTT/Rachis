@@ -1,79 +1,32 @@
+<!--
+    @component
+    EditorWidget is used to display the main editing area for users to write in.
+
+    Rendered by the BaseWidget component; this file simply describes the child
+    data to be rendered within the BaseWidget shell.
+-->
 <script lang="ts">
-    import { onMount, onDestroy } from "svelte";
-    import { basicSetup } from "codemirror";
-    import { EditorView } from "@codemirror/view";
-    import { markdown } from "@codemirror/lang-markdown";
-    import { sessionStore as ss } from "$lib/stores/session.svelte";
-
-    let editorElement: HTMLDivElement;
-    let view: EditorView;
-
-    let rachisId: string = $state<string>("");
-
-    // Now that we have a way to search and load Rachises, we can use the session store to
-    // actually... you know... load the data
-
-    async function loadRachis(): Promise<void> {
-        await ss.setRachisById(rachisId);
-        rachisId = "";
-
-        view?.dispatch({
-            changes: [
-                {
-                    from: 0,
-                    to: view.state.doc.length,
-                    insert: ss.current_rachis?.content ?? "",
-                },
-            ],
-        });
+    interface Props {
+        /** Text to show in the widget's title bar */
+        title: string;
+        /** The editor's content */
+        content: string;
     }
 
-    async function unloadRachis(): Promise<void> {
-        await ss.setRachisById();
-        view?.dispatch({
-            changes: [
-                {
-                    from: 0,
-                    to: view.state.doc.length,
-                    insert: "",
-                },
-            ],
-        });
-    }
+    let { title, content }: Props = $props();
 
-    async function saveRachisContents(content: string): Promise<void> {
-        if (ss.current_rachis) {
-            await ss.updateRachis({ ...ss.current_rachis, content });
-        }
-    }
+    /**
+     * TODO: ddo something
+     *
+     * @param content
+     */
+    async function onSave(content: string): Promise<void> {}
 
-    onMount((): void => {
-        view = new EditorView({
-            doc: "Your story begins...",
-            extensions: [basicSetup, markdown()],
-            parent: editorElement,
-        });
-    });
-
-    onDestroy((): void => {
-        view?.destroy();
-    });
+    /**
+     * TODO: also here do osotmehing
+     */
+    async function onClose(): Promise<void> {}
 </script>
 
-<main>
-    <div>
-        <p>Load Rachis (by ID):</p>
-        <input type="text" bind:value={rachisId} />
-        <button onclick={(): Promise<void> => loadRachis()}>Load</button>
-        <button onclick={(): Promise<void> => unloadRachis()}>Unload</button>
-    </div>
-    <div>
-        <pre>Loaded Rachis: {JSON.stringify(ss.current_rachis, null, 4)}</pre>
-    </div>
-    <div bind:this={editorElement}></div>
-    <div>
-        <button
-            onclick={(): Promise<void> =>
-                saveRachisContents(view.state.doc.toString())}>Save</button>
-    </div>
-</main>
+<!-- TODO: Replace with CodeMirror editor -->
+<p>Content: {content}</p>

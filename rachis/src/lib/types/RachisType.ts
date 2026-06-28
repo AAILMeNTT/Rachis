@@ -29,14 +29,4 @@
  * - [as_str()](RachisType::as_str) - Returns the string representation of the [RachisType].
  * - [from_str()](RachisType::from_str) - Returns a [RachisType] from a string representation.
  */
-export enum RachisType {
-    "ACT" = "ACT",
-    "ARC" = "ARC",
-    "SCENE" = "SCENE",
-    "DEFAULT" = "DEFAULT",
-    "CHARACTER" = "CHARACTER",
-    "EVENT" = "EVENT",
-    "LOCATION" = "LOCATION",
-    "ITEM" = "ITEM",
-    "NOTE" = "NOTE",
-}
+export enum RachisType { "ACT" = "ACT", "ARC" = "ARC", "SCENE" = "SCENE", "DEFAULT" = "DEFAULT", "CHARACTER" = "CHARACTER", "EVENT" = "EVENT", "LOCATION" = "LOCATION", "ITEM" = "ITEM", "NOTE" = "NOTE" }

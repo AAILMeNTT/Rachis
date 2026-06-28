@@ -1,6 +1,6 @@
 [package]
 name = "rachis"
-version = "0.5.0"
+version = "0.6.0"
 description = "Rachis Writing: Desktop App"
 authors = ["AAILMeNTT"]
 edition = "2021"

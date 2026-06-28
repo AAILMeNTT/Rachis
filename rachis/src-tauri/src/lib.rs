@@ -2,6 +2,7 @@ mod domain;
 mod registry;
 mod storage;
 mod tag;
+mod tree;
 
 use domain::{Flight, Rachis, RachisType};
 use registry::{Registry, RegistryEntry};

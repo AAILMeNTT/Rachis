@@ -1,5 +1,5 @@
 <script lang="ts">
-    import "$lib/styles/app.css";
+    // import "$lib/styles/app.css";
     import { dialogs } from "$lib/stores/dialog.svelte";
     import type { FormField } from "$lib/types/Dialog";
 
