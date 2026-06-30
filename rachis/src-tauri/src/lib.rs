@@ -1,19 +1,28 @@
 mod domain;
+mod entities;
+mod io;
 mod registry;
 mod storage;
 mod tag;
 mod tree;
-
-use domain::{Flight, Rachis, RachisType};
+use io::context::{FlightContext, FlightError};
 use registry::{Registry, RegistryEntry};
-use std::path::PathBuf;
-use std::sync::{Mutex, MutexGuard};
+use std::{
+    path::PathBuf,
+    sync::{Mutex, MutexGuard},
+};
 use storage::Database;
 use tauri::{Manager, State};
 use uuid::Uuid;
 
+use domain::{
+    flight::Flight,
+    rachis::{Rachis, RachisType},
+};
+
 struct AppData {
-    db: Mutex<storage::Database>,
+    db: Mutex<Database>,
+    flight: Mutex<Option<FlightContext>>,
     registry: Mutex<registry::Registry>,
     /// Directory where registry.json lives — needed for disk persistence
     registry_dir: PathBuf,
@@ -26,16 +35,9 @@ fn parse_tag(input: &str) -> Option<tag::Tag> {
     tag::Tag::parse(input)
 }
 
-// ———————— Database Mgmt ————————
-//
-// #[tauri::command(rename_all = "snake_case")]
-// fn new_project(path: &str) -> Result<(), String> {}
-//
-// #[tauri::command(rename_all = "snake_case")]
-// fn open_project(path: &str) -> Result<(), String> {}
-//
-// #[tauri::command(rename_all = "snake_case")]
-// fn delete_project(path: &str) -> Result<(), String> {}
+// ————————————————————————————————————————————————————————————————————————————
+//                            PRE STRUCTURE OVERHAUL
+// ————————————————————————————————————————————————————————————————————————————
 
 // ———————— Flight CRUD ————————
 
@@ -231,6 +233,18 @@ fn get_registry_stats(state: State<AppData>) -> Result<(usize, usize), String> {
     Ok((registry.count(), registry.total_word_count()))
 }
 
+// ————————————————————————————————————————————————————————————————————————————
+//                           POST STRUCTURE OVERHAUL
+// ————————————————————————————————————————————————————————————————————————————
+
+#[tauri::command(rename_all = "snake_case")]
+fn open_flight(state: State<AppData>, dir: String) -> Result<(), String> {
+    let ctx: FlightContext = FlightContext::open(&dir).map_err(|e: FlightError| e.to_string())?;
+    let mut flight = state.flight.lock().unwrap();
+    *flight = Some(ctx);
+    Ok(())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -249,6 +263,7 @@ pub fn run() {
 
             app.manage(AppData {
                 db: Mutex::new(db),
+                flight: Mutex::new(None),
                 registry: Mutex::new(registry),
                 registry_dir: app_dir,
             });
@@ -277,6 +292,8 @@ pub fn run() {
             get_rachises_by_title,
             get_rachises_by_type,
             update_rachis,
+            // FlightContext commands
+            open_flight,
             // Misc
             parse_tag,
         ])

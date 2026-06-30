@@ -3,7 +3,7 @@ name = "rachis"
 version = "0.6.0"
 description = "Rachis Writing: Desktop App"
 authors = ["AAILMeNTT"]
-edition = "2021"
+edition = "2024"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -18,11 +18,11 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
-tauri = { version = "2.11.1", features = [] }
-tauri-plugin-opener = { version = "2.5.4" }
-serde = { version = "1", features = ["derive"] }
-serde_json = { version = "1" }
-uuid = { version = "1.23.1", features = ["v4"] }
-chrono = { version = "0.4", features = ["serde"] }
-rusqlite = { version = "0.39", features = ["bundled"] }
-ts-rs = { version = "12", features = ["chrono-impl", "uuid-impl"] }
+tauri = { version = "^2.11.3", features = [] }
+tauri-plugin-opener = { version = "^2.5.4" }
+serde = { version = "^1", features = ["derive"] }
+serde_json = { version = "^1.0.150" }
+uuid = { version = "^1.23.4", features = ["v4"] }
+chrono = { version = "^0.4.45", features = ["serde"] }
+rusqlite = { version = "^0.40", features = ["bundled"] }
+ts-rs = { version = "^12", features = ["chrono-impl", "uuid-impl"] }

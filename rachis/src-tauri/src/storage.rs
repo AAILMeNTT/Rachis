@@ -2,7 +2,11 @@ use chrono::{DateTime, Utc};
 use rusqlite::{self, CachedStatement, Connection, Error, Result, Row};
 use uuid::Uuid;
 
-use crate::domain::{Flight, Rachis, RachisType};
+// Pre domain remodel
+use crate::domain::flight::Flight;
+use crate::domain::rachis::{Rachis, RachisType};
+
+// Post domain remodel
 
 #[derive(Debug)]
 pub struct Database {
