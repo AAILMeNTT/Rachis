@@ -71,8 +71,6 @@ sqlite is dead long live native file system
 - all the shitty sqlite crud IPC commands were KILLED!!!!! and replaced with ✨beautiful✨ crud IPC commands:
     - `create_flight(flight_path, flight_name)` - creates a new Flight directory on disk, initialises `.flight` metadata, + stores the FlightContext
     - `get_flight(flight_path, flight_name, flight_id)` - opens a Flight connection by path, reads its metadata, and caches the FlightContext
-    - `update_flight()` - placeholder for future
-    - `delete_flight(flight_path)` - placeholder for future
     - `create_file(title, type, content)` - replaces `create_rachis`. delegates to `FlightContext::create_file`, which handles filename derivation, subdirectory mapping, file creation, metadata indexing, and identity theft
     - `save_file(id, content)` - replaces `update_rachis`. delegates to `FlightContext::save_file` for writing content to disk
 
