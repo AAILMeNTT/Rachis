@@ -1,6 +1,5 @@
 import type { Component } from "svelte";
 import type { WidgetType } from "$lib/types/WidgetType";
-import type { Leaf } from "$lib/types/Leaf";
 
 // All Widget modules found in the `widgets` directory
 // TIL Svelte's $lib alias doesn't work reliably in import.meta.glob keys so don't try it at home

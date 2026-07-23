@@ -3,8 +3,9 @@
     import { landingStore } from "$lib/stores/landing.svelte";
     import App from "$lib/components/layout/App.svelte";
 
-    onMount((): void => {
-        landingStore.loadAll();
+    onMount(async (): Promise<void> => {
+        await landingStore.reconcileFlights();
+        await landingStore.loadAll();
     });
 </script>
 

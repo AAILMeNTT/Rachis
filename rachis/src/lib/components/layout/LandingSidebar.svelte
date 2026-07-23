@@ -1,12 +1,14 @@
 <script lang="ts">
     import "$lib/styles/app.css";
     import { landingStore } from "$lib/stores/landing.svelte";
+    import { invoke } from "@tauri-apps/api/core";
     import Moon from "@lucide/svelte/icons/moon";
     import Button from "$lib/components/layout/Button.svelte";
     import { dialogs } from "$lib/stores/dialog.svelte";
+    import { type FlightMetadata } from "$lib/types/FlightMetadata";
 
     interface Props {
-        /** probably gonna get rid of this asp don't get used to it */
+        /** TODO: probably gonna get rid of this asp don't get used to it */
         user?: { name: string };
     }
 
@@ -14,6 +16,8 @@
 
     /** Prompts the user to select a Flight to open */
     async function handleOpenFlight(): Promise<void> {
+        await landingStore.reconcileFlights();
+
         // If the user has no flights, show an alert and return
         if (landingStore.flights.length === 0) {
             await dialogs.alert(
@@ -31,6 +35,7 @@
     /** Prompts the user to provide information to create a new Flight */
     async function handleNewFlight(): Promise<void> {
         // Present a form to the user to fill out the details of the new Flight
+        // TODO: An option to append the Flight name to the end would be nice (auto enabled?)
         const result: Record<string, string> | null = await dialogs.form(
             "New Flight",
             [
@@ -45,7 +50,9 @@
                     id: "path",
                     label: "File Path",
                     type: "text",
-                    placeholder: "/projects/mlp_ad_eternum",
+                    placeholder: "/home/user/Writing/Ad Eternum",
+                    // Maybe just... require it for now
+                    required: true,
                 },
             ],
             { submitText: "Let's fly!" }
@@ -55,10 +62,16 @@
         if (result) {
             const name: string = result.name;
             // TODO: more aggressive snake-casing so that the names are valid regardless of platform
-            const path: string =
-                result.path
-                || `/projects/${name.toLowerCase().replace(/\s+/g, "_")}.rachis`;
-            await landingStore.add(name, path);
+            const path: string = result.path;
+            // || `/projects/${name.toLowerCase().replace(/\s+/g, "_")}`;
+            let flight: FlightMetadata = await invoke<FlightMetadata>(
+                "create_flight",
+                {
+                    flight_path: path,
+                    flight_name: name,
+                }
+            );
+            await landingStore.add(flight.name, path, flight.id);
             dialogs.notify(`Created "${name}"`, { severity: "success" });
 
             // TODO: Open the new Flight immediately

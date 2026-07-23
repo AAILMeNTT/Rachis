@@ -13,7 +13,7 @@ id: string,
  */
 name: string, 
 /**
- * Absolute path to the `.rachis` database file
+ * Path to the enveloping directory
  */
 path: string, 
 /**

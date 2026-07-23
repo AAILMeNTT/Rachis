@@ -1,5 +1,5 @@
 <script lang="ts">
-    // import "$lib/styles/app.css";
+    import "$lib/styles/app.css";
     import { dialogs } from "$lib/stores/dialog.svelte";
     import type { FormField } from "$lib/types/Dialog";
 
@@ -41,6 +41,9 @@
             )
     );
 
+    /** The layout of the form fields */
+    let layout = $derived(fields.map((f: FormField) => f.layout ?? "vertical"));
+
     /** Updates a field's value on input */
     function updateValue(id: string, value: string): void {
         values[id] = value;
@@ -59,20 +62,28 @@
     /** Handles keyboard input */
     function handleKeydown(event: KeyboardEvent): void {
         // If Enter is pressed and the form can be submitted, handle it
-        if (event.key === "Enter" && canSubmit) {
-            handleSubmit();
-        }
+        if (event.key === "Enter" && canSubmit) handleSubmit();
     }
 </script>
 
-<div class="dialog form-dialog" role="dialog" aria-labelledby="form-title">
+<div
+    class="dialog form-dialog
+    bg-white rounded-2xl px-7 py-6 min-w-100 max-w-130 shadow-[0_8px_32px_rgba(29,11,49,0.15)]"
+    role="dialog"
+    aria-labelledby="form-title">
     <h2 id="form-title" class="text-midnight-violet text-lg font-bold">
         {title}
     </h2>
 
-    <div class="form-fields" onkeydown={handleKeydown} role="none">
-        {#each fields as field (field.id)}
-            <div class="form-field">
+    <div
+        class="form-fields flex flex-col gap-4 mt-4"
+        onkeydown={handleKeydown}
+        role="none">
+        {#each fields as field, i (field.id)}
+            <div
+                class="form-field flex {layout[i] === 'horizontal' ?
+                    'flex-row items-start gap-x-4'
+                :   'flex-col'}">
                 <label
                     for={`form-${field.id}`}
                     class="block text-midnight-violet text-sm mb-1.5">
@@ -83,7 +94,9 @@
                     {/if}
                 </label>
 
-                {#if field.type === "select" && field.options}
+                {#if field.type === "info"}
+                    <!-- The "info" field type is used for displaying information to the user, not for input, and it doesn't need a display since the label does that already -->
+                {:else if field.type === "select" && field.options}
                     <select
                         id={`form-${field.id}`}
                         value={values[field.id]}
@@ -94,13 +107,42 @@
                             );
                         }}
                         class="w-full px-3 py-2 rounded-lg border border-wisteria/30
-                               text-midnight-violet text-sm bg-white
-                               focus:outline-none focus:border-lilac focus:ring-1 focus:ring-lilac">
+                                text-midnight-violet text-sm bg-white
+                                focus:outline-none focus:border-lilac focus:ring-1 focus:ring-lilac hover:cursor-pointer">
                         {#each field.options as option}
                             <option value={option.value}>{option.label}</option>
                         {/each}
                     </select>
-                {:else}
+                {:else if field.type === "radio" && field.options}
+                    <div
+                        class="flex gap-2 {layout[i] === 'horizontal' ?
+                            'flex-row'
+                        :   'flex-col'}"
+                        role="radiogroup"
+                        aria-label={field.label}>
+                        {#each field.options as option}
+                            <!-- TODO: Add some way to deselect the option -->
+                            <label
+                                class="radio-option
+                                flex items-center gap-1.5 cursor-pointer text-sm bg-white text-midnight-violet px-3 py-1.5 border border-wisteria rounded-lg transition-all duration-0.15s has-checked:bg-lilac has-checked:text-white has-checked:border-white/0">
+                                <input
+                                    type="radio"
+                                    name={`form-${field.id}`}
+                                    value={option.value}
+                                    checked={values[field.id] === option.value}
+                                    onchange={(e: Event): void => {
+                                        updateValue(
+                                            field.id,
+                                            (e.target as HTMLInputElement).value
+                                        );
+                                    }}
+                                    class="radio-input appearance-none absolute" />
+                                <span class="select-none pointer-events-none"
+                                    >{option.label}</span>
+                            </label>
+                        {/each}
+                    </div>
+                {:else if field.type === "text"}
                     <input
                         id={`form-${field.id}`}
                         type="text"
@@ -113,86 +155,25 @@
                         }}
                         placeholder={field.placeholder}
                         class="w-full px-3 py-2 rounded-lg border border-wisteria/30
-                               text-midnight-violet text-sm
-                               focus:outline-none focus:border-lilac focus:ring-1 focus:ring-lilac" />
+                                text-midnight-violet text-sm
+                                focus:outline-none focus:border-lilac focus:ring-1 focus:ring-lilac" />
                 {/if}
             </div>
         {/each}
     </div>
 
-    <div class="dialog-actions mt-6 flex justify-end gap-x-3">
+    <div
+        class="mt-6 flex justify-end gap-x-3
+        *:cursor-pointer *:px-5 *:py-2 *:rounded-[10px] *:font-medium *:text-sm *:transition-all *:duration-150">
+        <!-- TODO: Add in the whole like -100/-200/-300 things for the colours -->
         <button
-            class="btn btn-cancel"
+            class="bg-cornsilk text-midnight-violet hover:bg-cornsilk-300"
             onclick={handleCancel}
-            aria-label={cancelText}>
-            {cancelText}
-        </button>
-        <button
-            class="btn btn-submit"
+            aria-label={cancelText}>{cancelText}</button
+        ><button
+            class="btn-submit bg-lilac text-white disabled:opacity-50 disabled:cursor-not-allowed"
             onclick={handleSubmit}
             disabled={!canSubmit}
-            aria-label={submitText}>
-            {submitText}
-        </button>
+            aria-label={submitText}>{submitText}</button>
     </div>
 </div>
-
-<style>
-    .form-dialog {
-        background: white;
-        border-radius: 16px;
-        /* padding: 24px 28px */
-        padding-inline: 28px;
-        padding-block: 24px;
-        min-width: 400px;
-        max-width: 520px;
-        box-shadow: 0 8px 32px rgba(29, 11, 49, 0.15);
-    }
-
-    .form-fields {
-        display: flex;
-        flex-direction: column;
-        gap: 16px;
-        margin-top: 16px;
-    }
-
-    .dialog-actions button {
-        cursor: pointer;
-        /*padding: 8px 20px;*/
-        padding-inline: 20px;
-        padding-block: 8px;
-        border-radius: 10px;
-        font-size: 14px;
-        font-weight: 500;
-        border: none;
-        transition: all 0.15s;
-    }
-
-    .btn-cancel {
-        background: var(--color-cornsilk);
-        color: var(--color-midnight-violet);
-    }
-    .btn-cancel:hover {
-        background: color-mix(
-            in oklch,
-            var(--color-cornsilk),
-            var(--color-lilac) 15%
-        );
-    }
-
-    .btn-submit {
-        background: var(--color-lilac);
-        color: white;
-    }
-    .btn-submit:hover:not(:disabled) {
-        background: color-mix(in oklch, var(--color-lilac), black 10%);
-    }
-    .btn-submit:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-    }
-
-    select:hover {
-        cursor: pointer;
-    }
-</style>

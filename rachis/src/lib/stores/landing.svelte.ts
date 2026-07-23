@@ -1,5 +1,16 @@
-import { type RegistryEntry } from "$lib/types/RegistryEntry";
 import { invoke } from "@tauri-apps/api/core";
+import { dialogs } from "$lib/stores/dialog.svelte";
+import { type FormField } from "$lib/types/Dialog";
+import { type RegistryEntry } from "$lib/types/RegistryEntry";
+import { type ReconcileReport } from "$lib/types/ReconcileReport";
+
+interface ReconcileReportAcc {
+    found: ReconcileReport[];
+    moved: ReconcileReport[];
+    mismatched: ReconcileReport[];
+    discovered: ReconcileReport[];
+    total: number;
+}
 
 /**
  * Manages the landing page data/the Flight registry.
@@ -17,6 +28,10 @@ class LandingStore {
      */
     flights: RegistryEntry[] = $state<RegistryEntry[]>([]);
 
+    currentFlight: RegistryEntry | undefined = $state<
+        RegistryEntry | undefined
+    >(undefined);
+
     // ========================================================================
     // Derived Values
     // ========================================================================
@@ -26,7 +41,7 @@ class LandingStore {
      */
     favorites: RegistryEntry[] = $derived.by((): RegistryEntry[] => {
         return this.flights.filter(
-            (flight: RegistryEntry): boolean => flight.is_favorite
+            (e: RegistryEntry): boolean => e.is_favorite
         );
     });
 
@@ -35,7 +50,7 @@ class LandingStore {
      */
     nonfavorites: RegistryEntry[] = $derived.by((): RegistryEntry[] => {
         return this.flights.filter(
-            (flight: RegistryEntry): boolean => !flight.is_favorite
+            (e: RegistryEntry): boolean => !e.is_favorite
         );
     });
 
@@ -67,7 +82,7 @@ class LandingStore {
      */
     total_word_count: number = $derived.by((): number => {
         return this.flights
-            .map((flight: RegistryEntry): number => flight.word_count)
+            .map((e: RegistryEntry): number => e.word_count)
             .reduce((a: number, b: number): number => a + b, 0);
     });
 
@@ -122,6 +137,173 @@ class LandingStore {
     }
 
     /**
+     * Sets the current flight by ID, returning the entry if found.
+     *
+     * @param id The ID of the flight to set as current.
+     *
+     * @returns The `RegistryEntry` if found, otherwise `undefined`.
+     */
+    setCurrent(id: string): RegistryEntry | undefined {
+        this.currentFlight = this.flights.find((f) => f.id === id);
+        return this.currentFlight;
+    }
+
+    // TODO: There should probably be a button in the Settings that can proc this manually, yeah?
+    async reconcileFlights(): Promise<void> {
+        let reports: ReconcileReportAcc = await invoke<ReconcileReport[]>(
+            "reconcile_registry_flights"
+        ).then((r: ReconcileReport[]): ReconcileReportAcc =>
+            r.reduce(
+                (
+                    acc: ReconcileReportAcc,
+                    r: ReconcileReport
+                ): ReconcileReportAcc => {
+                    switch (r.status.type) {
+                        case "Found":
+                            acc.found.push(r);
+                            break;
+                        case "Moved":
+                            acc.moved.push(r);
+                            break;
+                        case "Mismatch":
+                            acc.mismatched.push(r);
+                            break;
+                        case "Discovered":
+                            acc.discovered.push(r);
+                            break;
+                    }
+                    acc.total++;
+                    return acc;
+                },
+                {
+                    found: [],
+                    moved: [],
+                    mismatched: [],
+                    discovered: [],
+                    total: 0,
+                }
+            )
+        );
+
+        // Create a Notify dialog if there are no Moved, Mismatched, or Discovered reports
+        if (reports.total === reports.found.length && reports.total > 0) {
+            dialogs.notify(`All ${reports.total} Flight(s) accounted for!`);
+        }
+        // Otherwise, create an Alert dialog that shows the user the moved, mismatched, and discovered Flights
+        else {
+            const moved: FormField[] = reports.moved.map(
+                (r: ReconcileReport): FormField => {
+                    // lowkey i hate typescript but i can't fault it for my inadequacies
+                    if (r.status.type !== "Moved")
+                        throw new Error("unreachable");
+                    return {
+                        id: r.id,
+                        label: `${r.name} (moved from ${r.status.data.old_path} to ${r.status.data.new_path})`,
+                        type: "info",
+                    };
+                }
+            );
+            const mismatched: FormField[] = reports.mismatched.map(
+                (r: ReconcileReport): FormField => ({
+                    id: r.id,
+                    label: r.name,
+                    type: "radio",
+                    layout: "horizontal",
+                    options: [
+                        { value: "unregister", label: "Unregister" },
+                        { value: "keep", label: "Keep" },
+                    ],
+                    required: true,
+                })
+            );
+            const discovered: FormField[] = reports.discovered.map(
+                (r: ReconcileReport): FormField => ({
+                    id: r.id,
+                    label: r.name,
+                    type: "radio",
+                    layout: "horizontal",
+                    options: [
+                        { value: "register", label: "Register" },
+                        { value: "ignore", label: "Ignore" },
+                    ],
+                    required: true,
+                })
+            );
+            const fields: FormField[] = moved
+                .concat(mismatched)
+                .concat(discovered);
+
+            const result: Record<string, string> | null = await dialogs.form(
+                `Rachis found some discrepancies!`,
+                fields,
+                { submitText: "Done" }
+            );
+
+            if (result) {
+                // Collect all the removals and registrations
+                const toRemove: string[] = [];
+                const toRegister: {
+                    name: string;
+                    path: string;
+                    id: string;
+                }[] = [];
+
+                for (const id of Object.keys(result)) {
+                    switch (result[id]) {
+                        case "unregister":
+                            toRemove.push(id);
+                            break;
+                        case "register": {
+                            // Find the report to get the path and name
+                            const r: ReconcileReport | undefined =
+                                reports.discovered.find(
+                                    (r: ReconcileReport): boolean => r.id === id
+                                );
+                            if (r && r.status.type === "Discovered") {
+                                toRegister.push({
+                                    name: r.name,
+                                    path: r.status.data.path,
+                                    id: r.id,
+                                });
+                            }
+                            break;
+                        }
+                        // "keep" and "ignore" are ignored for now
+                    }
+                }
+
+                // Execute removals
+                for (const id of toRemove) {
+                    try {
+                        await invoke<boolean>("remove_registry_flight", { id });
+                    } catch (e) {
+                        console.error(`Failed to remove flight ${id}:`, e);
+                    }
+                }
+
+                // Execute registrations
+                for (const flight of toRegister) {
+                    try {
+                        await invoke<RegistryEntry>("add_registry_flight", {
+                            flight_name: flight.name,
+                            flight_path: flight.path,
+                            flight_id: flight.id,
+                        });
+                    } catch (e) {
+                        console.error(
+                            `Failed to register flight ${flight.id}:`,
+                            e
+                        );
+                    }
+                }
+
+                // Reload to reflect changes
+                await this.loadAll();
+            }
+        }
+    }
+
+    /**
      * Searches Flights by name (case-insensitive, partial match).
      *
      * @param query The search string to match against Flight names.
@@ -148,6 +330,7 @@ class LandingStore {
 
     /**
      * Toggles the favourite status of a Flight.
+     * Looks up the current status from the loaded flights list.
      *
      * @param id The UUID of the Flight to toggle.
      *
@@ -158,13 +341,16 @@ class LandingStore {
         this.error = null;
 
         try {
-            const result: boolean = await invoke<boolean>(
-                "toggle_registry_flight_favorite",
-                { id }
+            // Look up current status to compute the toggle
+            const current = this.setCurrent(id)?.is_favorite ?? false;
+
+            const entry: RegistryEntry = await invoke<RegistryEntry>(
+                "update_registry_flight",
+                { id, patch: { is_favorite: !current } }
             );
             await this.loadAll();
-            return result;
-        } catch (e: unknown) {
+            return entry.is_favorite;
+        } catch (e) {
             this.error = e as Error;
             return false;
         } finally {
@@ -206,14 +392,14 @@ class LandingStore {
      *
      * @returns The newly created RegistryEntry from the backend.
      */
-    async add(name: string, path: string): Promise<RegistryEntry> {
+    async add(name: string, path: string, id: string): Promise<RegistryEntry> {
         this.is_loading = true;
         this.error = null;
 
         try {
             const result: RegistryEntry = await invoke<RegistryEntry>(
                 "add_registry_flight",
-                { name, path }
+                { flight_name: name, flight_path: path, flight_id: id }
             );
             await this.loadAll();
             return result;

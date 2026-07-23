@@ -1,6 +1,9 @@
-use crate::tree::{Branch, Direction, Leaf, Tree, TreeNode};
-use uuid::Uuid;
+use {
+    crate::tree::{Branch, Direction, Leaf, Tree, TreeNode},
+    uuid::Uuid,
+};
 
+#[allow(dead_code)]
 impl Tree {
     /// Adds a child node to the tree at the specified index.
     ///
@@ -245,15 +248,15 @@ mod tests {
     fn test_find_branch_in_tree_with_no_branches() {
         // Instantiate new Tree
         let tree: Tree = Tree::new();
-        println!("Tree: {:?}", tree);
+        println!("Tree: {tree:#?}");
 
         // Generate random Branch uuid
         let branch_id: Uuid = Uuid::new_v4();
-        println!("Random Branch ID: {:?}", branch_id);
+        println!("Random Branch ID: {branch_id:#?}");
 
         // Verify random Branch does not exist
         let result: Result<&Branch, String> = tree.find_branch(&branch_id);
-        println!("Result: {:?}", result);
+        println!("Result: {result:#?}");
         assert!(result.is_err());
     }
 
@@ -263,15 +266,15 @@ mod tests {
         let tree: Tree = Tree {
             root: TreeNode::Branch(Branch::default()),
         };
-        println!("Tree: {:?}", tree);
+        println!("Tree: {tree:#?}");
 
         // Generate random Leaf uuid
         let leaf_id: Uuid = Uuid::new_v4();
-        println!("Random Leaf ID: {:?}", leaf_id);
+        println!("Random Leaf ID: {leaf_id:#?}");
 
         // Verify random Leaf does not exist
         let result: Result<&Leaf, String> = tree.find_leaf(&leaf_id);
-        println!("Result: {:?}", result);
+        println!("Result: {result:#?}");
         assert!(result.is_err());
     }
 
@@ -281,16 +284,16 @@ mod tests {
         let tree: Tree = Tree {
             root: TreeNode::Branch(Branch::default()),
         };
-        println!("Tree: {:?}", tree);
+        println!("Tree: {tree:#?}");
 
         // Get branches and verify that only root branch is returned
         let branches: Vec<&Branch> = tree.get_branches();
-        println!("Branches: {:?}", branches);
+        println!("Branches: {branches:#?}");
         assert!(branches.len() == 1);
 
         // Find branch by ID and verify it matches the root branch
         let tree_first_branch: &Branch = tree.find_branch(&branches[0].id).unwrap();
-        println!("First branch: {:?}", tree_first_branch);
+        println!("First branch: {tree_first_branch:#?}");
         assert!(branches[0].id == tree_first_branch.id);
     }
 
@@ -298,16 +301,16 @@ mod tests {
     fn test_find_leaf_in_tree_with_one_leaf() {
         // Instantiate new Tree
         let tree: Tree = Tree::new();
-        println!("Tree: {:?}", tree);
+        println!("Tree: {tree:#?}");
 
         // Get leaves and verify that only root leaf is returned
         let leaves: Vec<&Leaf> = tree.get_leaves();
-        println!("Leaves: {:?}", leaves);
+        println!("Leaves: {leaves:#?}");
         assert!(leaves.len() == 1);
 
         // Find leaf by ID and verify it matches the root leaf
         let tree_first_leaf: &Leaf = tree.find_leaf(&leaves[0].id).unwrap();
-        println!("First leaf: {:?}", tree_first_leaf);
+        println!("First leaf: {tree_first_leaf:#?}");
         assert!(leaves[0].id == tree_first_leaf.id);
     }
 
@@ -315,7 +318,7 @@ mod tests {
     fn test_find_branch_in_tree_with_many_branches() {
         // Create empty Branch
         let branch: Branch = test_branch();
-        println!("Branch to find: {:?}", branch);
+        println!("Branch to find: {branch:#?}");
 
         // Instantiate new Tree with many branches
         let tree: Tree = Tree {
@@ -343,18 +346,18 @@ mod tests {
                 ..Branch::default()
             }),
         };
-        // println!("Tree: {:?}", tree);
+        // println!("Tree: {tree:#?}");
 
         let branches: Vec<&Branch> = tree.get_branches();
         // Feel free to uncomment if you're brave
         // (Maybe... could it be useful for debugging/maintenance to add a "display()" func to visualise what a Tree/TreeNode looks like?)
-        // println!("Branches: {:?}", branches);
+        // println!("Branches: {branches:#?}");
         println!("Branch count: {:?}", branches.len());
         assert!(branches.len() == 4);
 
         // Verify that the found branch is the same as the original branch made
         let found_branch: &Branch = tree.find_branch(&branch.id).unwrap();
-        println!("Found Branch: {:?}", found_branch);
+        println!("Found Branch: {found_branch:#?}");
         assert_eq!(found_branch.id, branch.id);
     }
 
@@ -362,7 +365,7 @@ mod tests {
     fn test_find_leaf_in_tree_with_many_leaves() {
         // Create empty Branch
         let leaf: Leaf = test_leaf(1);
-        println!("Leaf to find: {:?}", leaf);
+        println!("Leaf to find: {leaf:#?}");
 
         // Instantiate new Tree with many branches
         let tree: Tree = Tree {
@@ -390,16 +393,16 @@ mod tests {
                 ..Branch::default()
             }),
         };
-        // println!("Tree: {:?}", tree);
+        // println!("Tree: {tree:#?}");
 
         let leaves: Vec<&Leaf> = tree.get_leaves();
-        println!("Leaves: {:?}", leaves);
+        println!("Leaves: {leaves:#?}");
         println!("Leaf count: {:?}", leaves.len());
         assert!(leaves.len() == 5);
 
         // Verify that the found Leaf is the same as the original Leaf made
         let found_leaf: &Leaf = tree.find_leaf(&leaf.id).unwrap();
-        println!("Found Branch: {:?}", found_leaf);
+        println!("Found Branch: {found_leaf:#?}");
         assert_eq!(found_leaf.id, leaf.id);
     }
 
@@ -412,10 +415,10 @@ mod tests {
     fn test_add_leaf_to_tree_with_leaf_as_root() {
         // Instantiate new mutable Tree
         let mut tree: Tree = Tree::new();
-        println!("Tree: {:?}", tree);
+        println!("Tree: {tree:#?}");
         // Create a test Leaf to add as a child
         let leaf_to_add: Leaf = test_leaf(1);
-        println!("Leaf: {:?}", leaf_to_add);
+        println!("Leaf: {leaf_to_add:#?}");
 
         // Get the initial tree's root ID (a Picker Leaf)
         let leaves_before: Vec<Uuid> = tree
@@ -423,16 +426,16 @@ mod tests {
             .iter()
             .map(|l| l.id)
             .collect::<Vec<Uuid>>();
-        println!("Leaves before addition: {:?}", leaves_before);
+        println!("Leaves before addition: {leaves_before:#?}");
         assert_eq!(leaves_before.len(), 1);
         let target_id: Uuid = leaves_before[0];
-        println!("Target Leaf: {:?}", target_id);
+        println!("Target Leaf: {target_id:#?}");
 
         // Add a new Leaf as a child
         // Since target is a Leaf, add_child should wrap it in a Branch first
         tree.add_child(target_id, leaf_to_add.as_node(), None)
             .unwrap();
-        println!("Tree after addition: {:?}", tree);
+        println!("Tree after addition: {tree:#?}");
 
         // The tree should now have a Branch as root (was a Leaf, got wrapped)
         let branches: Vec<&Branch> = tree.get_branches();
@@ -440,7 +443,7 @@ mod tests {
         assert_eq!(branches.len(), 1);
 
         let leaves: Vec<&Leaf> = tree.get_leaves();
-        println!("Leaves: {:?}", leaves);
+        println!("Leaves: {leaves:#?}");
         println!("Leaf count: {:?}", leaves.len());
         assert_eq!(leaves.len(), 2);
     }
@@ -452,23 +455,23 @@ mod tests {
         let mut tree: Tree = Tree {
             root: TreeNode::Branch(test_branch()),
         };
-        println!("Tree: {:?}", tree);
+        println!("Tree: {tree:#?}");
         // Create Leaves to add
         let leaf_a: TreeNode = test_leaf(1).as_node();
         let leaf_b: TreeNode = test_leaf(2).as_node();
-        println!("Leaf a: {:?}", leaf_a);
-        println!("Leaf b: {:?}", leaf_b);
+        println!("Leaf a: {leaf_a:#?}");
+        println!("Leaf b: {leaf_b:#?}");
 
         let branch_id: Uuid = tree.root.get_id();
-        println!("Branch ID: {:?}", branch_id);
+        println!("Branch ID: {branch_id:#?}");
 
         // Add two children
         tree.add_child(branch_id, leaf_a, None).unwrap();
         tree.add_child(branch_id, leaf_b, None).unwrap();
-        println!("Tree after additions: {:?}", tree);
+        println!("Tree after additions: {tree:#?}");
 
         let leaves: Vec<&Leaf> = tree.get_leaves();
-        println!("Leaves: {:?}", leaves);
+        println!("Leaves: {leaves:#?}");
         assert_eq!(leaves.len(), 2);
     }
 
@@ -479,18 +482,18 @@ mod tests {
         let mut tree: Tree = Tree {
             root: TreeNode::Branch(test_branch()),
         };
-        println!("Tree: {:?}", tree);
+        println!("Tree: {tree:#?}");
         // Get the Branch ID of the root Branch
         let branch_id: Uuid = tree.root.get_id();
-        println!("Branch ID: {:?}", branch_id);
+        println!("Branch ID: {branch_id:#?}");
 
         // Create test Leaf nodes
         let leaf_a: TreeNode = test_leaf(1).as_node();
         let leaf_b: TreeNode = test_leaf(2).as_node();
         let leaf_c: TreeNode = test_leaf(3).as_node();
-        println!("Leaf A: {:?}", leaf_a);
-        println!("Leaf B: {:?}", leaf_b);
-        println!("Leaf C: {:?}", leaf_c);
+        println!("Leaf A: {leaf_a:#?}");
+        println!("Leaf B: {leaf_b:#?}");
+        println!("Leaf C: {leaf_c:#?}");
 
         // Insert A and B, then insert C at index 1 (between them)
         tree.add_child(branch_id, leaf_a, None).unwrap();
@@ -499,7 +502,7 @@ mod tests {
 
         // Verify the order by checking positions
         let branch: &Branch = tree.find_branch(&branch_id).unwrap();
-        println!("Branch: {:?}", branch);
+        println!("Branch: {branch:#?}");
         assert_eq!(branch.children.len(), 3);
 
         // Child at index 1 should be C (id suffix 0x03)
@@ -512,14 +515,14 @@ mod tests {
     #[test]
     fn test_add_child_target_not_found() {
         let mut tree: Tree = Tree::new();
-        println!("Tree before add: {:?}", tree);
+        println!("Tree before add: {tree:#?}");
 
         let leaf: TreeNode = test_leaf(1).as_node();
-        println!("Leaf to add: {:?}", leaf);
+        println!("Leaf to add: {leaf:#?}");
 
         let result: Result<(), String> = tree.add_child(Uuid::new_v4(), leaf, None);
-        println!("Tree after add: {:?}", tree);
-        println!("Result: {:?}", result);
+        println!("Tree after add: {tree:#?}");
+        println!("Result: {result:#?}");
         assert!(result.is_err());
     }
 
@@ -527,14 +530,14 @@ mod tests {
     fn test_add_child_wraps_leaf() {
         // Adding to a Leaf should wrap it in a Branch
         let mut tree: Tree = Tree::new();
-        println!("Tree before add: {:?}", tree);
+        println!("Tree before add: {tree:#?}");
         let original_leaf_id: Uuid = tree.get_leaves()[0].id;
-        println!("Original leaf id: {:?}", original_leaf_id);
+        println!("Original leaf id: {original_leaf_id:#?}");
         let new_leaf: TreeNode = test_leaf(1).as_node();
-        println!("New leaf: {:?}", new_leaf);
+        println!("New leaf: {new_leaf:#?}");
 
         tree.add_child(original_leaf_id, new_leaf, None).unwrap();
-        println!("Tree after add: {:?}", tree);
+        println!("Tree after add: {tree:#?}");
 
         // Root should now be a Branch wrapping both leaves
         match &tree.root {
@@ -558,22 +561,22 @@ mod tests {
         let mut tree: Tree = Tree {
             root: TreeNode::Branch(test_branch()),
         };
-        println!("Tree: {:?}", tree);
+        println!("Tree: {tree:#?}");
         let branch_id: Uuid = tree.get_branches()[0].id;
-        println!("Branch ID: {:?}", branch_id);
+        println!("Branch ID: {branch_id:#?}");
 
         let leaf: TreeNode = TreeNode::Leaf(Leaf {
             id: Uuid::parse_str("00000000-0000-0000-0000-111111111111").unwrap(),
             ..Leaf::default()
         });
-        println!("Leaf: {:?}", leaf);
+        println!("Leaf: {leaf:#?}");
         tree.add_child(branch_id, leaf, None).unwrap();
-        println!("Tree after add: {:?}", tree);
+        println!("Tree after add: {tree:#?}");
 
         let child_id: Uuid = tree.get_leaves()[0].id;
-        println!("Child ID: {:?}", child_id);
+        println!("Child ID: {child_id:#?}");
         let removed: TreeNode = tree.remove_child(branch_id, child_id).unwrap();
-        println!("Tree after remove: {:?}", tree);
+        println!("Tree after remove: {tree:#?}");
 
         // Should have removed the correct node
         assert_eq!(removed.get_id(), child_id);

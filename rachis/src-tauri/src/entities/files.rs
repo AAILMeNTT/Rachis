@@ -3,12 +3,16 @@
 ///
 /// Each row represents one file (`.rachis`, `.md`, `.bbcode`, etc.) that
 /// belongs to this Flight.
-
-use serde::{Deserialize, Serialize};
+use {
+    serde::{Deserialize, Serialize},
+    ts_rs::TS,
+};
 
 /// The `files` model. Serves as an index of every content file in the project directory.
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ProjectFiles {
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, TS)]
+pub struct ProjectFile {
+    /// UUID identifying this file in the `.flight` database (stable across renames)
+    pub id: String,
     /// Relative path from the project root, e.g. `"chapters/Chapter 2.rachis"`
     pub path: String,
     /// Display title of the file (derived from filename or user-set)

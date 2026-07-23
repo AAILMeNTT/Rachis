@@ -18,11 +18,16 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
-tauri = { version = "^2.11.3", features = [] }
-tauri-plugin-opener = { version = "^2.5.4" }
-serde = { version = "^1", features = ["derive"] }
-serde_json = { version = "^1.0.150" }
-uuid = { version = "^1.23.4", features = ["v4"] }
 chrono = { version = "^0.4.45", features = ["serde"] }
-rusqlite = { version = "^0.40", features = ["bundled"] }
-ts-rs = { version = "^12", features = ["chrono-impl", "uuid-impl"] }
+regex = "1.13.1"
+rusqlite = { version = "^0.40.1", features = ["bundled"] }
+serde = { version = "^1.0.229", features = ["derive"] }
+serde_json = { version = "^1.0.151" }
+tauri = { version = "^2.11.5", features = [] }
+tauri-plugin-opener = { version = "^2.5.4" }
+ts-rs = { version = "^12.0.1", features = ["chrono-impl", "uuid-impl"] }
+uuid = { version = "^1.24.0", features = ["v4"] }
+walkdir = "2.5.0"
+
+[dev-dependencies]
+proptest = { version = "^1.11.0" }

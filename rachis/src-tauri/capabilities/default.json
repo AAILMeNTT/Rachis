@@ -6,17 +6,19 @@
     "permissions": ["core:default", "opener:default"],
     "commands": {
         "allow": [
+            "add_registry_flight",
+            "get_registry_flight",
+            "list_registry_flights",
+            "remove_registry_flight",
+            "search_registry_flights",
+            "update_registry_flight",
+            "get_recent_registry_flight",
+            "reconcile_registry_flights",
+            "create_file",
+            "save_file",
             "create_flight",
-            "create_rachis",
-            "delete_flight",
-            "delete_rachis",
             "get_flight",
-            "get_rachis_by_id",
-            "get_rachises_by_title",
-            "get_rachises_by_type",
-            "parse_tag",
-            "update_flight",
-            "update_rachis"
+            "parse_tag"
         ]
     }
 }

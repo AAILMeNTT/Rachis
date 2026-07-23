@@ -1,9 +1,10 @@
 pub mod ops;
-// pub mod storage;
 
-use serde::{Deserialize, Serialize};
-use ts_rs::TS;
-use uuid::Uuid;
+use {
+    serde::{Deserialize, Serialize},
+    ts_rs::TS,
+    uuid::Uuid,
+};
 
 /// The root of a Workspace tree. Always has exactly one root node.
 ///
@@ -17,6 +18,7 @@ pub struct Tree {
     pub root: TreeNode,
 }
 
+#[allow(dead_code)]
 impl Tree {
     pub fn new() -> Self {
         Self {
@@ -108,6 +110,7 @@ pub enum TreeNode {
     Leaf(Leaf),
 }
 
+#[allow(dead_code)]
 impl TreeNode {
     pub fn new() -> Self {
         TreeNode::Leaf(Leaf::new())
@@ -235,6 +238,7 @@ pub struct Branch {
     pub ratios: Vec<f32>,
 }
 
+#[allow(dead_code)]
 impl Branch {
     /// Creates a new, empty Branch.
     pub fn new() -> Self {
@@ -387,28 +391,28 @@ mod tests {
     #[test]
     fn test_widget_type_default() {
         let widget_type: WidgetType = Default::default();
-        println!("Default WidgetType: {:?}", widget_type);
+        println!("Default WidgetType: {widget_type:#?}");
         assert_eq!(widget_type, WidgetType::Empty);
     }
 
     #[test]
     fn test_direction_default() {
         let dir: Direction = Direction::default();
-        println!("Default Direction: {:?}", dir);
+        println!("Default Direction: {dir:#?}");
         assert_eq!(dir, Direction::Horizontal);
     }
 
     #[test]
     fn test_tree_node_creates_branch() {
         let node: TreeNode = TreeNode::Branch(Branch::new());
-        println!("TreeNode: {:?}", node);
+        println!("TreeNode: {node:#?}");
         assert!(matches!(node, TreeNode::Branch(_)));
     }
 
     #[test]
     fn test_tree_node_creates_leaf() {
         let node: TreeNode = TreeNode::Leaf(Leaf::new());
-        println!("TreeNode: {:?}", node);
+        println!("TreeNode: {node:#?}");
         assert!(matches!(node, TreeNode::Leaf(_)));
     }
 }

@@ -1,13 +1,14 @@
 /// The `entity_cache` table stores parsed tag data for fast lookups.
 ///
-/// Tags are parsed on-read from content files. This table caches the results so
-/// entity lookups (tag auto-completion, landing page stats, etc.) are fast, and
-/// is rebuilt when content is saved.
+/// Tags are parsed on-read from content files. This caches results so entity
+/// lookups (for tag auto-completion, landing page stats, etc.) are fast, and
+/// should be rebuilt when content is saved.
 
 use serde::{Deserialize, Serialize};
 
 /// The `entity_cache` model, storing cached parsed tag data.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[allow(dead_code)]
 pub struct EntityCache {
     /// UUID identifying this cached tag entry
     pub id: String,
