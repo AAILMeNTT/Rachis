@@ -266,7 +266,7 @@ impl FlightContext {
 
         Ok(results)
     }
-    
+
     /// Returns metadata for a single file by its stable UUID.
     ///
     /// # Arguments
@@ -355,8 +355,6 @@ impl FlightContext {
                     is_native = excluded.is_native",
                 params![file_id.to_string(), path.to_str(), title, word_count, now, is_native],
             )?;
-
-
 
             db.execute("UPDATE flight_meta SET updated_at = ?1", params![now])?;
         }

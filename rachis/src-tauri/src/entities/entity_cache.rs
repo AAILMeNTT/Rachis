@@ -3,7 +3,6 @@
 /// Tags are parsed on-read from content files. This caches results so entity
 /// lookups (for tag auto-completion, landing page stats, etc.) are fast, and
 /// should be rebuilt when content is saved.
-
 use serde::{Deserialize, Serialize};
 
 /// The `entity_cache` model, storing cached parsed tag data.

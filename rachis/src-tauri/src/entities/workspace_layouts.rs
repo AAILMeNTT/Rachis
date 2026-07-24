@@ -3,7 +3,6 @@
 /// Each row represents one saved layout for the workspace.
 ///
 /// NOT YET UTILISED
-
 use serde::{Deserialize, Serialize};
 
 /// The `workspace_layouts` model — saved workspace tree snapshots.
