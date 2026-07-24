@@ -14,25 +14,24 @@
  *
  * TODO: Develop better documentation for Flight struct
  */
-export type Flight = {
-    /**
-     * Unique identifier for the Flight
-     */
-    id: string;
-    /**
-     * A name given by the user to the Flight
-     */
-    name: string;
-    /**
-     * The time the Flight was created
-     */
-    created_at: string;
-    /**
-     * The time the Flight was last updated
-     */
-    updated_at: string;
-    /**
-     * Whether this Flight is favourited by the user
-     */
-    is_favorite: boolean;
-};
+export type Flight = { 
+/**
+ * Unique identifier for the Flight
+ */
+id: string, 
+/**
+ * A name given by the user to the Flight
+ */
+name: string, 
+/**
+ * The time the Flight was created
+ */
+created_at: string, 
+/**
+ * The time the Flight was last updated
+ */
+updated_at: string, 
+/**
+ * Whether this Flight is favourited by the user
+ */
+is_favorite: boolean, };

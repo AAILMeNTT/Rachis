@@ -14,6 +14,7 @@
                     type: "text",
                     placeholder: "insert credit card",
                     required: true,
+                    layout: "vertical",
                 },
                 {
                     id: "field2",
@@ -24,13 +25,15 @@
                         { value: "yes", label: "Yes" },
                         { value: "no", label: "No" },
                     ],
+                    layout: "vertical",
                 },
             ],
-            submitText: "Create",
+            submitText: "Done",
             cancelText: "Cancel",
         },
         argTypes: {
             title: { control: "text" },
+            fields: { control: "object" },
             submitText: { control: "text" },
             cancelText: { control: "text" },
         },
@@ -40,7 +43,7 @@
 <Story name="TextFields" />
 
 <Story
-    name="WithSelect"
+    name="Select"
     args={{
         title: "New Rachis",
         fields: [
@@ -69,6 +72,122 @@
                 label: "Folder",
                 type: "text",
                 placeholder: "e.g., Protagonists/Mane 6",
+            },
+        ],
+        submitText: "Create",
+        cancelText: "Cancel",
+    }} />
+
+<Story
+    name="Vertical Radio"
+    args={{
+        title: "New Rachis",
+        fields: [
+            {
+                id: "name",
+                label: "Rachis Name",
+                type: "text",
+                placeholder: "Enter the rachis name",
+                required: true,
+                layout: "vertical",
+            },
+            {
+                id: "type",
+                label: "Rachis Type",
+                type: "radio",
+                required: true,
+                layout: "vertical",
+                options: [
+                    { value: "character", label: "Character" },
+                    { value: "location", label: "Location" },
+                    { value: "event", label: "Event" },
+                    { value: "item", label: "Item" },
+                    { value: "note", label: "Note" },
+                ],
+            },
+        ],
+        submitText: "Create",
+        cancelText: "Cancel",
+    }} />
+
+<Story
+    name="Horizontal Radio"
+    args={{
+        title: "New Rachis",
+        fields: [
+            {
+                id: "name",
+                label: "Rachis Name",
+                type: "text",
+                placeholder: "Enter the rachis name",
+                required: true,
+                layout: "horizontal",
+            },
+            {
+                id: "type",
+                label: "Rachis Type",
+                type: "radio",
+                required: true,
+                layout: "horizontal",
+                options: [
+                    { value: "character", label: "Character" },
+                    { value: "location", label: "Location" },
+                    { value: "event", label: "Event" },
+                    { value: "item", label: "Item" },
+                    { value: "note", label: "Note" },
+                ],
+            },
+        ],
+        submitText: "Create",
+        cancelText: "Cancel",
+    }} />
+
+<Story
+    name="Mixed Radio"
+    args={{
+        title: "New Rachis",
+        fields: [
+            {
+                id: "name",
+                label: "Rachis Name",
+                type: "text",
+                placeholder: "Enter the rachis name",
+                required: true,
+                layout: "vertical",
+            },
+            {
+                id: "type",
+                label: "Rachis Type",
+                type: "radio",
+                required: true,
+                layout: "horizontal",
+                options: [
+                    { value: "character", label: "Character" },
+                    { value: "location", label: "Location" },
+                    { value: "event", label: "Event" },
+                    { value: "item", label: "Item" },
+                    { value: "note", label: "Note" },
+                ],
+            },
+        ],
+        submitText: "Create",
+        cancelText: "Cancel",
+    }} />
+
+<Story
+    name="Info"
+    args={{
+        title: "New Rachis",
+        fields: [
+            {
+                id: "just_letting_you_know",
+                label: "This isn't really a form I'm just like letting you know",
+                type: "info",
+            },
+            {
+                id: "oh_yeah",
+                label: "Oh yeah yeah yeah",
+                type: "info",
             },
         ],
         submitText: "Create",

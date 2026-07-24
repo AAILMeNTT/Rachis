@@ -1,7 +1,10 @@
-use std::fmt;
+use {
+    serde::{Deserialize, Serialize},
+    std::fmt,
+};
 
 /// A parsed tag from [Rachis] text.
-#[derive(Debug, Clone, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct Tag {
     /// The beginning character of the tag.
     pub prefix: char,
@@ -17,8 +20,8 @@ pub struct Tag {
     pub index: String,
     /// The lock status of the Rachis.
     /// 0 - unrestricted (any Rachis can have this same name)
-    /// 1 - restricted (any Rachis of the same type as this must have a different name)
-    /// 2 - hard restricted (no other Rachises can have this name)
+    /// 1 - local restriction (any Rachis of the same type as this must have a different name)
+    /// 2 - global restriction (no other Rachises can have this name)
     pub lock: u8,
 }
 
@@ -51,7 +54,7 @@ impl Tag {
     ///
     /// # Arguments
     ///
-    /// - `s: &str` - The tag to parse.
+    /// - s: [`impl AsRef<str>`](str) - The tag to parse.
     ///
     /// # Returns
     ///
@@ -60,7 +63,9 @@ impl Tag {
     /// # Examples
     ///
     /// TODO: Generate examples for Tag::parse()
-    pub fn parse(s: &str) -> Option<Self> {
+    pub fn parse(s: impl AsRef<str>) -> Option<Self> {
+        let s: &str = s.as_ref();
+
         // If the whole tag is shorter than 4 characters, return None
         // All tags are comprised of at least 4 elements: the prefix (1+ char(s)), the delimiters (2
         // chars), and the content (1+ char(s))
@@ -125,12 +130,16 @@ impl Tag {
                     }
                     // If this character is a '~', mark the next character(s) as part of the index
                     '~' => {
-                        println!( "Modifier {c} found: following integer(s) are part of this Rachis' index." );
+                        println!(
+                            "Modifier {c} found: following integer(s) are part of this Rachis' index."
+                        );
                         // Mark the next characters as part of the index
                         is_index = true;
                     }
                     '|' => {
-                        println!( "Modifier {c} found: following text is part of this Rachis' display text." );
+                        println!(
+                            "Modifier {c} found: following text is part of this Rachis' display text."
+                        );
                         // Mark the following characters as part of the display text
                         is_display_text = true;
                     }
@@ -208,7 +217,13 @@ impl fmt::Display for Tag {
         write!(
             f,
             "Prefix: {}\nContent: {}\nRaw: {}\nFolder Path: {}\nIndex: {}\nDisplay Text: {}\nLock status: {}",
-            self.prefix, self.content, self.raw, self.folder_path.join("/-/"), self.index, self.display_text, self.lock
+            self.prefix,
+            self.content,
+            self.raw,
+            self.folder_path.join("/-/"),
+            self.index,
+            self.display_text,
+            self.lock
         )
     }
 }
@@ -221,7 +236,7 @@ mod tests {
     #[test]
     fn valid_range_delimiters() {
         // ———————— Valid Tag ————————
-        let valid_tag: Option<Tag> = Tag::parse(&String::from("c!Twilight Sparkle!"));
+        let valid_tag: Option<Tag> = Tag::parse("c!Twilight Sparkle!");
         // Assert that the second and last characters are delimiters
         assert!(valid_tag.is_some());
     }
@@ -230,12 +245,12 @@ mod tests {
     #[test]
     fn invalid_range_delimiters() {
         // ———————— Invalid Tag 1 ————————
-        let invalid_tag: Option<Tag> = Tag::parse(&String::from("c-Twilight Sparkle!"));
+        let invalid_tag: Option<Tag> = Tag::parse("c-Twilight Sparkle!");
         // Assert that the second char is not a delimiter
         assert!(invalid_tag.is_none());
 
         // ———————— Invalid Tag 2 ————————
-        let invalid_tag: Option<Tag> = Tag::parse(&String::from("c!Twilight Sparkle-"));
+        let invalid_tag: Option<Tag> = Tag::parse("c!Twilight Sparkle-");
         // Assert that the last char is not a delimiter
         assert!(invalid_tag.is_none());
     }
@@ -244,11 +259,11 @@ mod tests {
     #[test]
     fn valid_prefixes() {
         // ———————— Valid Tag ————————
-        let char_tag: Option<Tag> = Tag::parse(&String::from("c!Twilight Sparkle!"));
-        let event_tag: Option<Tag> = Tag::parse(&String::from("e!Twilight Sparkle!"));
-        let loc_tag: Option<Tag> = Tag::parse(&String::from("l!Twilight Sparkle!"));
-        let item_tag: Option<Tag> = Tag::parse(&String::from("i!Twilight Sparkle!"));
-        let note_tag: Option<Tag> = Tag::parse(&String::from("n!Twilight Sparkle!"));
+        let char_tag: Option<Tag> = Tag::parse("c!Twilight Sparkle!");
+        let event_tag: Option<Tag> = Tag::parse("e!Twilight Sparkle!");
+        let loc_tag: Option<Tag> = Tag::parse("l!Twilight Sparkle!");
+        let item_tag: Option<Tag> = Tag::parse("i!Twilight Sparkle!");
+        let note_tag: Option<Tag> = Tag::parse("n!Twilight Sparkle!");
         // Assert that the first character is one of 'c', 'e', 'l', 'i', or 'n'
         assert!(char_tag.unwrap().validate_prefix().is_ok());
         assert!(event_tag.unwrap().validate_prefix().is_ok());
@@ -261,7 +276,7 @@ mod tests {
     #[test]
     fn invalid_prefixes() {
         // ———————— Invalid Tag ————————
-        let tag: Option<Tag> = Tag::parse(&String::from("x!Twilight Sparkle!"));
+        let tag: Option<Tag> = Tag::parse("x!Twilight Sparkle!");
         // Assert that the first character is not one of 'c', 'e', 'l', 'i', or 'n'
         assert!(tag.unwrap().validate_prefix().is_err());
     }
@@ -270,7 +285,7 @@ mod tests {
     #[test]
     fn no_index() {
         // ———————— No Index ————————
-        let tag: Option<Tag> = Tag::parse(&String::from("c!Twilight Sparkle!"));
+        let tag: Option<Tag> = Tag::parse("c!Twilight Sparkle!");
         // Assert that the index is an empty String
         assert_eq!(tag.unwrap().index.is_empty(), true);
     }
@@ -279,8 +294,8 @@ mod tests {
     #[test]
     fn with_index() {
         // ———————— With Index ————————
-        let tag2: Option<Tag> = Tag::parse(&String::from("c!Twilight Sparkle~2!"));
-        let tag203452: Option<Tag> = Tag::parse(&String::from("c!Twilight Sparkle~203452!"));
+        let tag2: Option<Tag> = Tag::parse("c!Twilight Sparkle~2!");
+        let tag203452: Option<Tag> = Tag::parse("c!Twilight Sparkle~203452!");
         // Assert that the index is not an empty String
         assert_eq!(tag2.unwrap().index.is_empty(), false);
         assert_eq!(tag203452.unwrap().index.is_empty(), false);
@@ -290,9 +305,8 @@ mod tests {
     #[test]
     fn tag_with_content() {
         // ———————— With Content ————————
-        let tag_with_content: Option<Tag> =
-            Tag::parse(&String::from("e!Crystal Kingdom's Return\\!~2!"));
-        println!("{:?}", tag_with_content);
+        let tag_with_content: Option<Tag> = Tag::parse("e!Crystal Kingdom's Return\\!~2!");
+        println!("{tag_with_content:#?}");
         // Assert that the content is not an empty String
         assert_eq!(
             tag_with_content.unwrap().content,
@@ -304,11 +318,11 @@ mod tests {
     #[test]
     fn tag_with_no_content() {
         // ———————— No Content ————————
-        let tag_no_content1: Option<Tag> = Tag::parse(&String::from("c!~2!"));
-        let tag_no_content2: Option<Tag> = Tag::parse(&String::from("c!.!"));
-        let tag_no_content3: Option<Tag> = Tag::parse(&String::from("c!:!"));
-        let tag_no_content4: Option<Tag> = Tag::parse(&String::from("c!/!"));
-        let tag_no_content5: Option<Tag> = Tag::parse(&String::from("c!/~10:!"));
+        let tag_no_content1: Option<Tag> = Tag::parse("c!~2!");
+        let tag_no_content2: Option<Tag> = Tag::parse("c!.!");
+        let tag_no_content3: Option<Tag> = Tag::parse("c!:!");
+        let tag_no_content4: Option<Tag> = Tag::parse("c!/!");
+        let tag_no_content5: Option<Tag> = Tag::parse("c!/~10:!");
         println!("{:?}", tag_no_content1);
         println!("{:?}", tag_no_content2);
         println!("{:?}", tag_no_content3);
@@ -326,9 +340,8 @@ mod tests {
     #[test]
     fn display_text() {
         // ———————— Display Text ————————
-        let tag_with_display: Option<Tag> =
-            Tag::parse(&String::from("c!Twilight Sparkle|Equestrian Princess!"));
-        println!("{:?}", tag_with_display);
+        let tag_with_display: Option<Tag> = Tag::parse("c!Twilight Sparkle|Equestrian Princess!");
+        println!("{tag_with_display:#?}");
         // Assert that there is display text
         assert_eq!(tag_with_display.unwrap().display_text.is_empty(), false);
     }
@@ -338,8 +351,8 @@ mod tests {
     fn no_display_text() {
         // ———————— No Display Text ————————
         let tag_without_display: Option<Tag> =
-            Tag::parse(&String::from("c!Twilight Sparkle, Equestrian Princess!"));
-        println!("{:?}", tag_without_display);
+            Tag::parse("c!Twilight Sparkle, Equestrian Princess!");
+        println!("{tag_without_display:#?}");
         // Assert that there is no display text
         assert_eq!(tag_without_display.unwrap().display_text.is_empty(), true);
     }
@@ -348,8 +361,8 @@ mod tests {
     #[test]
     fn folder_path_no_subdirectory() {
         // ——————— No Subdirectory ————————
-        let tag_without_folder: Option<Tag> = Tag::parse(&String::from("c!Twilight Sparkle!"));
-        println!("{:?}", tag_without_folder);
+        let tag_without_folder: Option<Tag> = Tag::parse("c!Twilight Sparkle!");
+        println!("{tag_without_folder:#?}");
         // Assert that there is no folder path
         assert_eq!(tag_without_folder.unwrap().folder_path.is_empty(), true);
     }
@@ -358,8 +371,8 @@ mod tests {
     #[test]
     fn folder_path_single_subdirectory() {
         // ——————— Single Subdirectory ————————
-        let tag_with_folder: Option<Tag> = Tag::parse(&String::from("c!Mane 6/Twilight Sparkle!"));
-        println!("{:?}", tag_with_folder);
+        let tag_with_folder: Option<Tag> = Tag::parse("c!Mane 6/Twilight Sparkle!");
+        println!("{tag_with_folder:#?}");
         // Assert that there is a folder path
         assert_eq!(tag_with_folder.unwrap().folder_path, vec!["Mane 6"]);
     }
@@ -368,9 +381,8 @@ mod tests {
     #[test]
     fn folder_path_multiple_subdirectories() {
         // ——————— Multiple Subdirectories ————————
-        let tag_with_folders: Option<Tag> =
-            Tag::parse(&String::from("c!Protagonists/Mane 6/Twilight Sparkle!"));
-        println!("{:?}", tag_with_folders);
+        let tag_with_folders: Option<Tag> = Tag::parse("c!Protagonists/Mane 6/Twilight Sparkle!");
+        println!("{tag_with_folders:#?}");
         // Assert that there is a folder path
         assert_eq!(
             tag_with_folders.unwrap().folder_path,
@@ -385,7 +397,7 @@ mod tests {
         let tag_with_escaped_folder: Option<Tag> = Tag::parse(&String::from(
             "c!Protagonists\\/Main Characters/Mane 6/Twilight Sparkle!",
         ));
-        println!("{:?}", tag_with_escaped_folder);
+        println!("{tag_with_escaped_folder:#?}");
         // Assert that there is a folder path
         assert_eq!(
             tag_with_escaped_folder.unwrap().folder_path,
@@ -410,7 +422,8 @@ mod tests {
         // - The tag name is globally restricted (:)
         assert_eq!(tag.clone().unwrap().prefix, 'l');
         assert_eq!(tag.clone().unwrap().content, "Golden Oaks Library!");
-        assert_eq!(tag.clone().unwrap().raw,
+        assert_eq!(
+            tag.clone().unwrap().raw,
             "l!Equestria/Ponyville\\/\"The Apple Core\"/Golden Oaks Library\\!~3|Twilight's House (v\\.2)\\!:!"
         );
         assert_eq!(

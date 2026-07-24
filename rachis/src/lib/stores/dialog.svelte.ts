@@ -30,7 +30,7 @@ import type {
  * // Confirm dialog returns a Promise that resolves to `true` or `false`
  * const accept = await dialogs.confirm(
  *     "FREE $200,000",
- *     "Claim your FREE $200,000 RIGHT NOW?!?"
+ *     "Claim your FREE $200,000 RIGHT NOW?!?",
  *     {
  *         "confirmText": "wow! wonderful"
  *         "cancelText": "this is the deny button"
@@ -40,7 +40,7 @@ import type {
  *
  * // Prompt dialog returns a Promise that resolves to the user's input
  * const ssn = await dialogs.prompt("Okay you have to tell me your social security number then");
- * if (ssn) { user.setSSN(name); }
+ * if (ssn) { user.setSSN(ssn); }
  *
  * // Form dialog returns a Promise that resolves to the user's input for all fields
  * const form = await dialogs.form("okay awesome now fill in this stuff", [

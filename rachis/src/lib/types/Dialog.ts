@@ -33,14 +33,20 @@ export interface PromptDialog extends BaseDialog {
 
 // ——— Form ———
 
+export interface FormOption {
+    value: string;
+    label: string;
+}
+
 export interface FormField {
     id: string;
     label: string;
-    type: "text" | "select";
+    type: "info" | "text" | "select" | "radio";
     placeholder?: string;
     defaultValue?: string;
     required?: boolean;
-    options?: { value: string; label: string }[];
+    options?: FormOption[];
+    layout?: "vertical" | "horizontal";
 }
 
 export interface FormDialog extends BaseDialog {

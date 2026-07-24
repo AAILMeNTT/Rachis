@@ -2,62 +2,55 @@
 import type { RachisType } from "./RachisType";
 
 /**
- * Defines the structure for a Rachis object.
+ * Defines the structure for a Rachis object. This struct is only constructed as a payload from backend to provide a central point of information about a Rachis.
  *
  * # Fields
  *
- * - `id`: [Uuid] - The unique identifier for the Rachis.
- * - `flight_id`: [Uuid] - The ID of the Flight that this Rachis belongs to.
- * - `title`: [String] - The title of the Rachis.
- * - `content`: [String] - The content of the Rachis.
- * - `r#type`: [RachisType] - The type of the Rachis.
- * - `path`: [String] - The path of the Rachis.
- * - `created_at`: [DateTime<Utc>] - The time the Rachis was created.
- * - `updated_at`: [DateTime<Utc>] - The time the Rachis was last updated.
- * - `word_count`: [usize] - The word count of the Rachis.
+ * - `id`: [`Uuid`] - The unique identifier for the Rachis.
+ * - `flight_id`: [`Uuid`] - The ID of the Flight that this Rachis belongs to.
+ * - `title`: [`String`] - The title of the Rachis.
+ * - `r#type`: [`RachisType`] - The type of the Rachis.
+ * - `path`: [`PathBuf`] - The path of the Rachis.
+ * - `tags`: [`Vec<String>`](String) - The tags of the Rachis.
+ * - `word_count`: [`u32`] - The word count of the Rachis.
  *
  * # Functions
  *
- * - [new()](Rachis::new) - Creates a new Rachis.
- * - [update_name()](Rachis::update_name) - Updates the name of the Rachis.
- * - [update_content()](Rachis::update_content) - Updates the content of the Rachis.
- * - [word_count()](Rachis::word_count) - Updates the word count of the Rachis.
+ * - [`new()`](Rachis::new) - Creates a new Rachis.
+ * - [`id()`](Rachis::id) - Returns the ID of the Rachis.
+ * - [`flight_id()`](Rachis::flight_id) - Returns the ID of the Flight that this Rachis belongs to.
+ * - [`title()`](Rachis::title) - Returns the title of the Rachis.
+ * - [`r#type()`](Rachis::r#type) - Returns the type of the Rachis.
+ * - [`path()`](Rachis::path) - Returns the path of the Rachis.
+ * - [`word_count()`](Rachis::word_count) - Returns the word count of the Rachis.
+ * - [`tags()`](Rachis::tags) - Returns the tags of the Rachis.
  */
-export type Rachis = {
-    /**
-     * The unique identifier for the Rachis.
-     */
-    id: string;
-    /**
-     * The ID of the Flight that this Rachis belongs to.
-     */
-    flight_id: string;
-    /**
-     * The title of the Rachis.
-     */
-    title: string;
-    /**
-     * The content of the Rachis.
-     */
-    content: string;
-    /**
-     * The type of the Rachis (see [RachisType]).
-     */
-    type: RachisType;
-    /**
-     * The path of the Rachis.
-     */
-    path: string;
-    /**
-     * The time the Rachis was created.
-     */
-    created_at: string;
-    /**
-     * The time the Rachis was last updated.
-     */
-    updated_at: string;
-    /**
-     * The word count of the Rachis.
-     */
-    word_count: number;
-};
+export type Rachis = { 
+/**
+ * The unique identifier for the Rachis.
+ */
+id: string, 
+/**
+ * The ID of the Flight that this Rachis belongs to.
+ */
+flight_id: string, 
+/**
+ * The title of the Rachis.
+ */
+title: string, 
+/**
+ * The type of the Rachis (see [RachisType]).
+ */
+type: RachisType, 
+/**
+ * The path of the Rachis.
+ */
+path: string, 
+/**
+ * The tags that are used in the Rachis.
+ */
+tags: Array<string>, 
+/**
+ * The word count of the Rachis.
+ */
+word_count: number, };

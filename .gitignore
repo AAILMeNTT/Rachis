@@ -289,3 +289,5 @@ package
 /meta
 pnpm-lock.yaml
 debug-storybook.log
+## Matter of fact just omit everything hidden (you can't have my secrets)
+.*
