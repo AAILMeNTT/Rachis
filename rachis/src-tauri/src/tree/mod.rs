@@ -209,7 +209,17 @@ impl TreeNode {
 
 impl Default for TreeNode {
     fn default() -> Self {
-        Self::Leaf(Leaf::default())
+        Self::Leaf(Default::default())
+    }
+}
+
+impl Display for TreeNode {
+    /// Formats TreeNode as a concise string for log messages, error reporting, etc.
+    fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
+        match self {
+            TreeNode::Branch(b) => write!(f, "{b}"),
+            TreeNode::Leaf(l) => write!(f, "{l}"),
+        }
     }
 }
 
@@ -397,21 +407,21 @@ mod tests {
 
     #[test]
     fn test_direction_default() {
-        let dir: Direction = Direction::default();
+        let dir: Direction = Default::default();
         println!("Default Direction: {dir:#?}");
         assert_eq!(dir, Direction::Horizontal);
     }
 
     #[test]
     fn test_tree_node_creates_branch() {
-        let node: TreeNode = TreeNode::Branch(Branch::new());
+        let node: TreeNode = TreeNode::Branch(Default::default());
         println!("TreeNode: {node:#?}");
         assert!(matches!(node, TreeNode::Branch(_)));
     }
 
     #[test]
     fn test_tree_node_creates_leaf() {
-        let node: TreeNode = TreeNode::Leaf(Leaf::new());
+        let node: TreeNode = TreeNode::Leaf(Default::default());
         println!("TreeNode: {node:#?}");
         assert!(matches!(node, TreeNode::Leaf(_)));
     }

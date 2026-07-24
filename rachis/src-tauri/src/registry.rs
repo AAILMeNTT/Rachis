@@ -888,7 +888,7 @@ mod tests {
             id,
             RegistryEntryPatch {
                 is_favorite: Some(true),
-                ..RegistryEntryPatch::default()
+                ..Default::default()
             },
         )
         .expect("Failed to toggle favorite");
@@ -908,7 +908,7 @@ mod tests {
             id,
             RegistryEntryPatch {
                 is_favorite: Some(false),
-                ..RegistryEntryPatch::default()
+                ..Default::default()
             },
         )
         .expect("Failed to toggle favorite");
@@ -1106,11 +1106,11 @@ mod tests {
 
     #[test]
     fn test_default() {
-        let reg: Registry = Registry::default();
+        let reg: Registry = Default::default();
         assert_eq!(reg.version, 1);
         assert!(reg.flights.is_empty());
 
-        let entry: RegistryEntry = RegistryEntry::default();
+        let entry: RegistryEntry = Default::default();
         assert!(!entry.id.is_nil());
         assert_eq!(entry.name, "");
         assert_eq!(entry.path, "");

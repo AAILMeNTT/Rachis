@@ -34,7 +34,8 @@ impl Tree {
             },
             // If the target is a Leaf, replace it with a Branch containing the old Leaf and the new child
             TreeNode::Leaf(_) => {
-                let old_leaf: TreeNode = std::mem::replace(target, TreeNode::Branch(Branch::new()));
+                let old_leaf: TreeNode =
+                    std::mem::replace(target, TreeNode::Branch(Default::default()));
                 if let TreeNode::Branch(b) = target {
                     b.children.push(old_leaf);
                     b.children.push(child_node);
@@ -107,8 +108,8 @@ impl Tree {
                 // Replace the Leaf with a Branch containing the original Leaf and a new Leaf
                 *target = TreeNode::Branch(Branch {
                     direction,
-                    children: vec![l.as_node(), TreeNode::Leaf(Leaf::default())],
-                    ..Branch::default()
+                    children: vec![l.as_node(), TreeNode::Leaf(Default::default())],
+                    ..Default::default()
                 });
 
                 Ok(())
@@ -149,11 +150,11 @@ impl Tree {
     ///
     /// Because both LeafA and LeafB would be children of `Tree`, they are wrapped into a new Branch.
     fn collapse(&mut self) {
-        let old_root: TreeNode = std::mem::replace(&mut self.root, TreeNode::default());
+        let old_root: TreeNode = std::mem::replace(&mut self.root, Default::default());
         // Set the new root as the collapsed node
         match Self::collapse_node(old_root) {
             Some(new_root) => self.root = new_root,
-            None => self.root = TreeNode::default(),
+            None => self.root = Default::default(),
         }
     }
 
@@ -236,7 +237,7 @@ mod tests {
                 id_suffix
             ))
             .unwrap(),
-            ..Leaf::default()
+            ..Default::default()
         }
     }
 
@@ -247,7 +248,7 @@ mod tests {
     #[test]
     fn test_find_branch_in_tree_with_no_branches() {
         // Instantiate new Tree
-        let tree: Tree = Tree::new();
+        let tree: Tree = Default::default();
         println!("Tree: {tree:#?}");
 
         // Generate random Branch uuid
@@ -264,7 +265,7 @@ mod tests {
     fn test_find_leaf_in_tree_with_no_leaves() {
         // Instantiate new Tree with a branch root
         let tree: Tree = Tree {
-            root: TreeNode::Branch(Branch::default()),
+            root: TreeNode::Branch(Default::default()),
         };
         println!("Tree: {tree:#?}");
 
@@ -282,7 +283,7 @@ mod tests {
     fn test_find_branch_in_tree_with_one_branch() {
         // Instantiate new Workspace
         let tree: Tree = Tree {
-            root: TreeNode::Branch(Branch::default()),
+            root: TreeNode::Branch(Default::default()),
         };
         println!("Tree: {tree:#?}");
 
@@ -300,7 +301,7 @@ mod tests {
     #[test]
     fn test_find_leaf_in_tree_with_one_leaf() {
         // Instantiate new Tree
-        let tree: Tree = Tree::new();
+        let tree: Tree = Default::default();
         println!("Tree: {tree:#?}");
 
         // Get leaves and verify that only root leaf is returned
@@ -325,25 +326,25 @@ mod tests {
             root: TreeNode::Branch(Branch {
                 children: vec![
                     // Leaf node
-                    TreeNode::Leaf(Leaf::default()),
+                    TreeNode::Leaf(Default::default()),
                     // Branch (empty)
                     TreeNode::Branch(branch.clone()),
                     // Branch (one child)
                     TreeNode::Branch(Branch {
-                        children: vec![TreeNode::Leaf(Leaf::default())],
-                        ..Branch::default()
+                        children: vec![TreeNode::Leaf(Default::default())],
+                        ..Default::default()
                     }),
                     // Branch (many children)
                     TreeNode::Branch(Branch {
                         children: vec![
-                            TreeNode::Leaf(Leaf::default()),
-                            TreeNode::Leaf(Leaf::default()),
-                            TreeNode::Leaf(Leaf::default()),
+                            TreeNode::Leaf(Default::default()),
+                            TreeNode::Leaf(Default::default()),
+                            TreeNode::Leaf(Default::default()),
                         ],
-                        ..Branch::default()
+                        ..Default::default()
                     }),
                 ],
-                ..Branch::default()
+                ..Default::default()
             }),
         };
         // println!("Tree: {tree:#?}");
@@ -374,23 +375,23 @@ mod tests {
                     // Leaf node
                     TreeNode::Leaf(leaf.clone()),
                     // Branch (empty)
-                    TreeNode::Branch(Branch::default()),
+                    TreeNode::Branch(Default::default()),
                     // Branch (one child)
                     TreeNode::Branch(Branch {
-                        children: vec![TreeNode::Leaf(Leaf::default())],
-                        ..Branch::default()
+                        children: vec![TreeNode::Leaf(Default::default())],
+                        ..Default::default()
                     }),
                     // Branch (many children)
                     TreeNode::Branch(Branch {
                         children: vec![
-                            TreeNode::Leaf(Leaf::default()),
-                            TreeNode::Leaf(Leaf::default()),
-                            TreeNode::Leaf(Leaf::default()),
+                            TreeNode::Leaf(Default::default()),
+                            TreeNode::Leaf(Default::default()),
+                            TreeNode::Leaf(Default::default()),
                         ],
-                        ..Branch::default()
+                        ..Default::default()
                     }),
                 ],
-                ..Branch::default()
+                ..Default::default()
             }),
         };
         // println!("Tree: {tree:#?}");
@@ -414,7 +415,7 @@ mod tests {
     #[test]
     fn test_add_leaf_to_tree_with_leaf_as_root() {
         // Instantiate new mutable Tree
-        let mut tree: Tree = Tree::new();
+        let mut tree: Tree = Default::default();
         println!("Tree: {tree:#?}");
         // Create a test Leaf to add as a child
         let leaf_to_add: Leaf = test_leaf(1);
@@ -514,7 +515,7 @@ mod tests {
     /// Test adding a child to a non-existent target in the tree
     #[test]
     fn test_add_child_target_not_found() {
-        let mut tree: Tree = Tree::new();
+        let mut tree: Tree = Default::default();
         println!("Tree before add: {tree:#?}");
 
         let leaf: TreeNode = test_leaf(1).as_node();
@@ -529,7 +530,7 @@ mod tests {
     #[test]
     fn test_add_child_wraps_leaf() {
         // Adding to a Leaf should wrap it in a Branch
-        let mut tree: Tree = Tree::new();
+        let mut tree: Tree = Default::default();
         println!("Tree before add: {tree:#?}");
         let original_leaf_id: Uuid = tree.get_leaves()[0].id;
         println!("Original leaf id: {original_leaf_id:#?}");
@@ -600,7 +601,7 @@ mod tests {
 
     #[test]
     fn test_remove_child_from_leaf() {
-        let mut tree: Tree = Tree::new();
+        let mut tree: Tree = Default::default();
         let leaf_id: Uuid = tree.get_leaves()[0].id;
 
         let result: Result<TreeNode, String> = tree.remove_child(leaf_id, Uuid::new_v4());
@@ -616,7 +617,7 @@ mod tests {
         // Use a non-Picker leaf so we can distinguish original from new
         let editor_leaf: Leaf = Leaf {
             widget_type: WidgetType::Editor,
-            ..Leaf::default()
+            ..Default::default()
         };
         let mut tree: Tree = Tree {
             root: TreeNode::Leaf(editor_leaf),
@@ -659,7 +660,7 @@ mod tests {
 
     #[test]
     fn test_split_leaf_vertical() {
-        let mut tree: Tree = Tree::new();
+        let mut tree: Tree = Default::default();
         let leaf_id: Uuid = tree.get_leaves()[0].id;
 
         tree.split_leaf(leaf_id, Direction::Vertical).unwrap();
@@ -676,7 +677,7 @@ mod tests {
     #[test]
     fn test_split_branch_errors() {
         let mut tree: Tree = Tree {
-            root: TreeNode::Branch(Branch::default()),
+            root: TreeNode::Branch(Default::default()),
         };
         let branch_id = tree.get_branches()[0].id;
 
@@ -686,7 +687,7 @@ mod tests {
 
     #[test]
     fn test_split_leaf_nonexistent() {
-        let mut tree: Tree = Tree::new();
+        let mut tree: Tree = Default::default();
         let result = tree.split_leaf(Uuid::new_v4(), Direction::Horizontal);
         assert!(result.is_err());
     }
@@ -807,7 +808,7 @@ mod tests {
 
     #[test]
     fn test_add_then_remove_returns_to_singleton_branch() {
-        let mut tree: Tree = Tree::new();
+        let mut tree: Tree = Default::default();
         let original_id = tree.get_leaves()[0].id;
 
         // Add a child (wraps original Leaf in Branch)

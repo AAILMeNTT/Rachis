@@ -35,7 +35,7 @@ impl Finder {
     pub fn new(path: impl AsRef<Path>) -> Self {
         Self {
             path: path.as_ref().to_path_buf(),
-            ..Self::default()
+            ..Default::default()
         }
     }
 
