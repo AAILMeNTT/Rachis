@@ -224,14 +224,14 @@ mod tests {
     /// Helper functions
     fn test_branch() -> Branch {
         Branch {
-            id: Uuid::parse_str("10000000-0000-0000-0000-000000000001").unwrap(),
-            ..Branch::default()
+            id: Uuid::try_parse("10000000-0000-0000-0000-000000000001").unwrap(),
+            ..Default::default()
         }
     }
 
     fn test_leaf(id_suffix: u8) -> Leaf {
         Leaf {
-            id: Uuid::parse_str(&format!(
+            id: Uuid::try_parse(&format!(
                 "00000000-0000-0000-0000-0000000000{:02x}",
                 id_suffix
             ))
@@ -566,8 +566,8 @@ mod tests {
         println!("Branch ID: {branch_id:#?}");
 
         let leaf: TreeNode = TreeNode::Leaf(Leaf {
-            id: Uuid::parse_str("00000000-0000-0000-0000-111111111111").unwrap(),
-            ..Leaf::default()
+            id: Uuid::try_parse("00000000-0000-0000-0000-111111111111").unwrap(),
+            ..Default::default()
         });
         println!("Leaf: {leaf:#?}");
         tree.add_child(branch_id, leaf, None).unwrap();
@@ -718,14 +718,14 @@ mod tests {
         // Outer Branch containing inner Branch containing a Leaf
         let leaf: TreeNode = test_leaf(1).as_node();
         let inner_branch: TreeNode = TreeNode::Branch(Branch {
-            id: Uuid::parse_str("00000000-0000-0000-0000-000000000002").unwrap(),
+            id: Uuid::try_parse("00000000-0000-0000-0000-000000000002").unwrap(),
             direction: Direction::Vertical,
             children: vec![leaf],
             ratios: vec![],
         });
         let tree: Tree = Tree {
             root: TreeNode::Branch(Branch {
-                id: Uuid::parse_str("00000000-0000-0000-0000-000000000001").unwrap(),
+                id: Uuid::try_parse("00000000-0000-0000-0000-000000000001").unwrap(),
                 direction: Direction::Horizontal,
                 children: vec![inner_branch],
                 ratios: vec![],
@@ -743,7 +743,7 @@ mod tests {
             TreeNode::Branch(b) => {
                 assert_eq!(
                     b.id,
-                    Uuid::parse_str("00000000-0000-0000-0000-000000000002").unwrap()
+                    Uuid::try_parse("00000000-0000-0000-0000-000000000002").unwrap()
                 );
                 assert_eq!(b.direction, Direction::Vertical);
                 assert_eq!(b.children.len(), 1);
@@ -758,7 +758,7 @@ mod tests {
         let leaf: TreeNode = test_leaf(1).as_node();
         let mut tree: Tree = Tree {
             root: TreeNode::Branch(Branch {
-                id: Uuid::parse_str("00000000-0000-0000-0000-000000000001").unwrap(),
+                id: Uuid::try_parse("00000000-0000-0000-0000-000000000001").unwrap(),
                 direction: Direction::Horizontal,
                 children: vec![leaf],
                 ratios: vec![],
@@ -783,7 +783,7 @@ mod tests {
         let leaf_b: TreeNode = test_leaf(2).as_node();
         let mut tree: Tree = Tree {
             root: TreeNode::Branch(Branch {
-                id: Uuid::parse_str("00000000-0000-0000-0000-000000000001").unwrap(),
+                id: Uuid::try_parse("00000000-0000-0000-0000-000000000001").unwrap(),
                 direction: Direction::Horizontal,
                 children: vec![leaf_a, leaf_b],
                 ratios: vec![],
@@ -846,7 +846,7 @@ mod tests {
         let leaf_b: TreeNode = test_leaf(2).as_node();
         let leaf_c: TreeNode = test_leaf(3).as_node();
 
-        let inner_branch_id = Uuid::parse_str("00000000-0000-0000-0000-000000000002").unwrap();
+        let inner_branch_id = Uuid::try_parse("00000000-0000-0000-0000-000000000002").unwrap();
         let inner_branch: TreeNode = TreeNode::Branch(Branch {
             id: inner_branch_id,
             direction: Direction::Vertical,
@@ -854,7 +854,7 @@ mod tests {
             ratios: vec![],
         });
 
-        let outer_branch_id = Uuid::parse_str("00000000-0000-0000-0000-000000000001").unwrap();
+        let outer_branch_id: Uuid = Uuid::try_parse("00000000-0000-0000-0000-000000000001").unwrap();
         let mut tree: Tree = Tree {
             root: TreeNode::Branch(Branch {
                 id: outer_branch_id,
@@ -882,7 +882,7 @@ mod tests {
         // Build: Branch(outer) → Branch(inner) → Leaf
         let leaf: TreeNode = test_leaf(1).as_node();
 
-        let inner_branch_id = Uuid::parse_str("00000000-0000-0000-0000-000000000002").unwrap();
+        let inner_branch_id: Uuid = Uuid::try_parse("00000000-0000-0000-0000-000000000002").unwrap();
         let inner_branch: TreeNode = TreeNode::Branch(Branch {
             id: inner_branch_id,
             direction: Direction::Vertical,
@@ -890,7 +890,7 @@ mod tests {
             ratios: vec![],
         });
 
-        let outer_branch_id = Uuid::parse_str("00000000-0000-0000-0000-000000000001").unwrap();
+        let outer_branch_id: Uuid = Uuid::try_parse("00000000-0000-0000-0000-000000000001").unwrap();
         let mut tree: Tree = Tree {
             root: TreeNode::Branch(Branch {
                 id: outer_branch_id,
