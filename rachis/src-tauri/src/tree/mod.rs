@@ -68,17 +68,17 @@ impl Tree {
     ///
     /// # Fields
     ///
-    /// - `node`: [`&'a mut TreeNode`](TreeNode) - The node to search within
+    /// - `node`: [`&mut TreeNode`](TreeNode) - The node to search within
     /// - `target_id`: [`Uuid`](Uuid) - The ID of the node to find
     ///
     /// # Returns
     ///
-    /// - [`Ok(&'a mut TreeNode)`](TreeNode) - A mutable reference to the node if found
+    /// - [`Ok(&mut TreeNode)`](TreeNode) - A mutable reference to the node if found
     /// - [`Err(TreeError::NodeNotFound)`](TreeError::NodeNotFound) - An error if the node is not found
-    pub fn find_node_mut<'a>(
-        node: &'a mut TreeNode,
+    pub fn find_node_mut(
+        node: &mut TreeNode,
         target_id: impl AsRef<Uuid>,
-    ) -> Result<&'a mut TreeNode, TreeError> {
+    ) -> Result<&mut TreeNode, TreeError> {
         let target_id: &Uuid = target_id.as_ref();
         // Determine the type of TreeNode the node is
         match node {
@@ -161,24 +161,33 @@ impl TreeNode {
         }
     }
 
-    pub fn as_branch(&self) -> Option<&Branch> {
+    pub fn as_branch(&self) -> Result<&Branch, TreeError> {
         match self {
-            TreeNode::Branch(branch) => Some(branch),
-            _ => None,
+            TreeNode::Branch(branch) => Ok(branch),
+            _ => Err(TreeError::WrongNodeKind {
+                expected: "Branch".into(),
+                actual: self.to_string(),
+            }),
         }
     }
 
-    pub fn as_leaf_mut(&mut self) -> Option<&mut Leaf> {
+    pub fn as_leaf_mut(&mut self) -> Result<&mut Leaf, TreeError> {
         match self {
-            TreeNode::Leaf(leaf) => Some(leaf),
-            _ => None,
+            TreeNode::Leaf(leaf) => Ok(leaf),
+            _ => Err(TreeError::WrongNodeKind {
+                expected: "Leaf".into(),
+                actual: self.to_string(),
+            }),
         }
     }
 
-    pub fn as_branch_mut(&mut self) -> Option<&mut Branch> {
+    pub fn as_branch_mut(&mut self) -> Result<&mut Branch, TreeError> {
         match self {
-            TreeNode::Branch(branch) => Some(branch),
-            _ => None,
+            TreeNode::Branch(branch) => Ok(branch),
+            _ => Err(TreeError::WrongNodeKind {
+                expected: "Branch".into(),
+                actual: self.to_string(),
+            }),
         }
     }
 
