@@ -1,0 +1,7 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc f2377aa7fe7702911d8290fb3af7de07e0d44d004ce955c18d8cd14713f7e65f # shrinks to specs = [FileSpec { name: "x", hidden: false, ext: Some("rachis") }, FileSpec { name: "x", hidden: false, ext: Some("rachis") }]

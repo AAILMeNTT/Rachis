@@ -73,28 +73,33 @@ impl Tree {
     ///
     /// # Returns
     ///
-    /// - [`Option<&'a mut TreeNode>`](TreeNode) - A mutable reference to the node if found, otherwise `None`
-    pub fn find_node_mut<'a>(node: &'a mut TreeNode, target_id: Uuid) -> Option<&'a mut TreeNode> {
+    /// - [`Ok(&'a mut TreeNode)`](TreeNode) - A mutable reference to the node if found
+    /// - [`Err(TreeError::NodeNotFound)`](TreeError::NodeNotFound) - An error if the node is not found
+    pub fn find_node_mut<'a>(
+        node: &'a mut TreeNode,
+        target_id: impl AsRef<Uuid>,
+    ) -> Result<&'a mut TreeNode, TreeError> {
+        let target_id: &Uuid = target_id.as_ref();
         // Determine the type of TreeNode the node is
         match node {
             // If the current node is a Branch matching the target_id, return that node
-            TreeNode::Branch(b) if b.id == target_id => Some(node),
+            TreeNode::Branch(b) if b.id == *target_id => Ok(node),
             // If the current node is a Branch but not the target, recursively search its children
             TreeNode::Branch(b) => {
                 // For every child in the node...
                 for child in &mut b.children {
                     // If its ID matches the target_id, return that child
-                    if let Some(child_node) = Self::find_node_mut(child, target_id) {
-                        return Some(child_node);
+                    if let Ok(found) = Self::find_node_mut(child, target_id) {
+                        return Ok(found);
                     }
                 }
-                // If there are no matching children, return None
-                None
+                // If there are no matching children, throw an error
+                Err(TreeError::NodeNotFound(*target_id))
             }
             // If the current node is a Leaf matching the target_id, return that node
-            TreeNode::Leaf(l) if l.id == target_id => Some(node),
+            TreeNode::Leaf(l) if l.id == *target_id => Ok(node),
             // If the current node is a leaf that doesn't match the target_id, return None
-            TreeNode::Leaf(_) => None,
+            TreeNode::Leaf(_) => Err(TreeError::NodeNotFound(*target_id)),
         }
     }
 
@@ -114,6 +119,12 @@ impl Tree {
             .into_iter()
             .find(|l| &l.id == leaf_id)
             .ok_or(TreeError::LeafNotFound(*leaf_id))
+    }
+}
+
+impl Display for Tree {
+    fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
+        writeln!(f, "Tree root: {}", self.root)
     }
 }
 
@@ -140,10 +151,13 @@ impl TreeNode {
         matches!(self, TreeNode::Leaf(_))
     }
 
-    pub fn as_leaf(&self) -> Option<&Leaf> {
+    pub fn as_leaf(&self) -> Result<&Leaf, TreeError> {
         match self {
-            TreeNode::Leaf(leaf) => Some(leaf),
-            _ => None,
+            TreeNode::Leaf(leaf) => Ok(leaf),
+            _ => Err(TreeError::WrongNodeKind {
+                expected: "Leaf".into(),
+                actual: self.to_string(),
+            }),
         }
     }
 
@@ -310,13 +324,7 @@ impl Default for Branch {
 
 impl Display for Branch {
     fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
-        write!(
-            f,
-            "Branch(id={}, dir={}, children={})",
-            self.id,
-            self.direction,
-            self.children.len(),
-        )
+        write!(f, "{self}")
     }
 }
 
@@ -365,14 +373,7 @@ impl Default for Leaf {
 
 impl Display for Leaf {
     fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
-        match self.widget_instance_id {
-            Some(instance_id) => write!(
-                f,
-                "Leaf(id={}, widget={}, instance={})",
-                self.id, self.widget_type, instance_id
-            ),
-            None => write!(f, "Leaf(id={}, widget={})", self.id, self.widget_type),
-        }
+        write!(f, "{self}")
     }
 }
 
@@ -402,9 +403,9 @@ pub enum WidgetType {
     Tags,
     /// A placeholder shown when no widget type has been selected yet. Displays
     /// a picker menu for the user to choose a widget type.
+    #[default]
     Picker,
     /// A debug placeholder; never created by normal user interaction
-    #[default]
     Empty,
 }
 
@@ -456,7 +457,7 @@ mod tests {
     fn test_widget_type_default() {
         let widget_type: WidgetType = Default::default();
         println!("Default WidgetType: {widget_type:#?}");
-        assert_eq!(widget_type, WidgetType::Empty);
+        assert_eq!(widget_type, WidgetType::Picker);
     }
 
     #[test]

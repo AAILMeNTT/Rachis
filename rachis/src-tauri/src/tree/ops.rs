@@ -21,10 +21,10 @@ impl Tree {
     /// - `Ok(())` - If the child was added successfully, or an error message if the target node was not found.
     pub fn add_child(
         &mut self,
-        target_id: Uuid,
+        target_id: impl AsRef<Uuid>,
         child_node: TreeNode,
         index: Option<usize>,
-    ) -> Result<(), TreeError> {
+    ) -> Result<&mut Tree, TreeError> {
         // Get a mutable reference to the target node by ID
         let target: &mut TreeNode = Self::find_node_mut(&mut self.root, target_id)?;
 
@@ -44,7 +44,7 @@ impl Tree {
                 }
             }
         }
-        Ok(())
+        Ok(self)
     }
 
     /// Removes a TreeNode from the tree.
@@ -61,10 +61,15 @@ impl Tree {
     /// To resolve these error states, `collapse()` is called after removing the
     /// child. See the [`collapse()`](Self::collapse()) function for more detail.
     ///
-    /// # Fields
+    /// # Arguments
     ///
-    /// - `branch_id`: [`Uuid`] - The ID of the [`Branch`] to remove the child from.
-    /// - `child_id`: [`Uuid`] - The ID of the child to remove.
+    /// - `branch_id`: [`impl AsRef<Uuid>`](Uuid) - The ID of the [`Branch`] to remove the child from.
+    /// - `child_id`: [`impl AsRef<Uuid>`](Uuid) - The ID of the child to remove.
+    ///
+    /// # Returns
+    ///
+    /// - [`Ok(TreeNode)`](TreeNode) - The removed child node.
+    /// - [`Err(TreeError)`](TreeError) - If the branch or child is not found.
     pub fn remove_child(
         &mut self,
         branch_id: impl AsRef<Uuid>,
@@ -80,7 +85,7 @@ impl Tree {
                     .children
                     .iter()
                     .position(|c| c.get_id() == *child_id)
-                    .ok_or(TreeError::ChildNotFound(*child_id))?;
+                    .ok_or(TreeError::ChildNodeNotFound(*child_id))?;
                 // Remove the child at the found index
                 let removed: TreeNode = b.children.remove(index);
                 // Begin recursive collapse to remove empty Branches
@@ -227,29 +232,6 @@ mod tests {
     use crate::{errors::tree::TreeError, tree::WidgetType};
 
     // ========================================================================
-    // Helper functions
-    // ========================================================================
-
-    /// Helper functions
-    fn test_branch() -> Branch {
-        Branch {
-            id: Uuid::try_parse("10000000-0000-0000-0000-000000000001").unwrap(),
-            ..Default::default()
-        }
-    }
-
-    fn test_leaf(id_suffix: u8) -> Leaf {
-        Leaf {
-            id: Uuid::try_parse(&format!(
-                "00000000-0000-0000-0000-0000000000{:02x}",
-                id_suffix
-            ))
-            .unwrap(),
-            ..Default::default()
-        }
-    }
-
-    // ========================================================================
     // find_branch / find_leaf
     // ========================================================================
 
@@ -326,7 +308,7 @@ mod tests {
     #[test]
     fn test_find_branch_in_tree_with_many_branches() {
         // Create empty Branch
-        let branch: Branch = test_branch();
+        let branch: Branch = Default::default();
         println!("Branch to find: {branch:#?}");
 
         // Instantiate new Tree with many branches
@@ -373,7 +355,7 @@ mod tests {
     #[test]
     fn test_find_leaf_in_tree_with_many_leaves() {
         // Create empty Branch
-        let leaf: Leaf = test_leaf(1);
+        let leaf: Leaf = Default::default();
         println!("Leaf to find: {leaf:#?}");
 
         // Instantiate new Tree with many branches
@@ -426,7 +408,7 @@ mod tests {
         let mut tree: Tree = Default::default();
         println!("Tree: {tree:#?}");
         // Create a test Leaf to add as a child
-        let leaf_to_add: Leaf = test_leaf(1);
+        let leaf_to_add: Leaf = Default::default();
         println!("Leaf: {leaf_to_add:#?}");
 
         // Get the initial tree's root ID (a Picker Leaf)
@@ -462,12 +444,12 @@ mod tests {
     fn test_add_multiple_leaves_to_tree_with_empty_branch_as_root() {
         // Instantiate new Tree with a Branch root
         let mut tree: Tree = Tree {
-            root: TreeNode::Branch(test_branch()),
+            root: TreeNode::Branch(Default::default()),
         };
         println!("Tree: {tree:#?}");
         // Create Leaves to add
-        let leaf_a: TreeNode = test_leaf(1).as_node();
-        let leaf_b: TreeNode = test_leaf(2).as_node();
+        let leaf_a: TreeNode = Leaf::default().as_node();
+        let leaf_b: TreeNode = Leaf::default().as_node();
         println!("Leaf a: {leaf_a:#?}");
         println!("Leaf b: {leaf_b:#?}");
 
@@ -489,7 +471,7 @@ mod tests {
     fn test_add_child_to_branch_at_index() {
         // Instantiate a Tree with an empty Branch as the root
         let mut tree: Tree = Tree {
-            root: TreeNode::Branch(test_branch()),
+            root: TreeNode::Branch(Default::default()),
         };
         println!("Tree: {tree:#?}");
         // Get the Branch ID of the root Branch
@@ -497,27 +479,27 @@ mod tests {
         println!("Branch ID: {branch_id:#?}");
 
         // Create test Leaf nodes
-        let leaf_a: TreeNode = test_leaf(1).as_node();
-        let leaf_b: TreeNode = test_leaf(2).as_node();
-        let leaf_c: TreeNode = test_leaf(3).as_node();
+        let leaf_a: TreeNode = TreeNode::default();
+        let leaf_b: TreeNode = TreeNode::default();
+        let leaf_c: TreeNode = TreeNode::default();
         println!("Leaf A: {leaf_a:#?}");
         println!("Leaf B: {leaf_b:#?}");
         println!("Leaf C: {leaf_c:#?}");
 
         // Insert A and B, then insert C at index 1 (between them)
-        tree.add_child(branch_id, leaf_a, None).unwrap();
-        tree.add_child(branch_id, leaf_b, None).unwrap();
-        tree.add_child(branch_id, leaf_c, Some(1)).unwrap();
+        tree.add_child(branch_id, leaf_a.clone(), None).unwrap();
+        tree.add_child(branch_id, leaf_b.clone(), None).unwrap();
+        tree.add_child(branch_id, leaf_c.clone(), Some(1)).unwrap();
 
         // Verify the order by checking positions
         let branch: &Branch = tree.find_branch(&branch_id).unwrap();
         println!("Branch: {branch:#?}");
         assert_eq!(branch.children.len(), 3);
 
-        // Child at index 1 should be C (id suffix 0x03)
+        // Child at index 1 should be C
         let child_at_1: &TreeNode = &branch.children[1];
-        println!("Child at index 1: {:?}", child_at_1);
-        assert_eq!(child_at_1.get_id(), test_leaf(3).id);
+        println!("Child at index 1: {child_at_1:#?}");
+        assert_eq!(child_at_1.get_id(), leaf_c.get_id());
     }
 
     /// Test adding a child to a non-existent target in the tree
@@ -526,13 +508,13 @@ mod tests {
         let mut tree: Tree = Default::default();
         println!("Tree before add: {tree:#?}");
 
-        let leaf: TreeNode = test_leaf(1).as_node();
+        let leaf: TreeNode = Default::default();
         println!("Leaf to add: {leaf:#?}");
 
-        let result: Result<(), TreeError> = tree.add_child(Uuid::new_v4(), leaf, None);
-        println!("Tree after add: {tree:#?}");
+        let result = tree.add_child(Uuid::new_v4(), leaf, None);
         println!("Result: {result:#?}");
         assert!(result.is_err());
+        println!("Tree after add: {tree:#?}");
     }
 
     #[test]
@@ -542,7 +524,7 @@ mod tests {
         println!("Tree before add: {tree:#?}");
         let original_leaf_id: Uuid = tree.get_leaves()[0].id;
         println!("Original leaf id: {original_leaf_id:#?}");
-        let new_leaf: TreeNode = test_leaf(1).as_node();
+        let new_leaf: TreeNode = Default::default();
         println!("New leaf: {new_leaf:#?}");
 
         tree.add_child(original_leaf_id, new_leaf, None).unwrap();
@@ -568,7 +550,7 @@ mod tests {
     #[test]
     fn test_remove_child() {
         let mut tree: Tree = Tree {
-            root: TreeNode::Branch(test_branch()),
+            root: TreeNode::Branch(Default::default()),
         };
         println!("Tree: {tree:#?}");
         let branch_id: Uuid = tree.get_branches()[0].id;
@@ -593,13 +575,13 @@ mod tests {
         // remove_child() collapses the branch into a single PickerWidget Leaf,
         let leaves: Vec<&Leaf> = tree.get_leaves();
         assert_eq!(leaves.len(), 1);
-        assert_eq!(leaves[0].widget_type, WidgetType::Picker);
+        assert_eq!(leaves[0].widget_type, WidgetType::default());
     }
 
     #[test]
     fn test_remove_child_nonexistent() {
         let mut tree: Tree = Tree {
-            root: TreeNode::Branch(test_branch()),
+            root: TreeNode::Branch(Default::default()),
         };
         let branch_id = tree.get_branches()[0].id;
 
@@ -708,7 +690,7 @@ mod tests {
     fn test_collapse_empty_branch_removed() {
         // A Branch with 0 children should be removed by collapse
         let mut tree: Tree = Tree {
-            root: TreeNode::Branch(test_branch()),
+            root: TreeNode::Branch(Default::default()),
         };
 
         // The root Branch is empty. Collapse should remove it
@@ -717,32 +699,32 @@ mod tests {
 
         // Root should now be a Leaf (Picker)
         match &tree.root {
-            TreeNode::Leaf(l) => assert_eq!(l.widget_type, WidgetType::Picker),
+            TreeNode::Leaf(l) => assert_eq!(l.widget_type, WidgetType::default()),
             TreeNode::Branch(_) => panic!("Expected empty Branch to be collapsed"),
         }
     }
 
     #[test]
     fn test_collapse_singleton_branch_chain() {
+        let (id1, id2) = (Uuid::new_v4(), Uuid::new_v4());
+
         // Outer Branch containing inner Branch containing a Leaf
-        let leaf: TreeNode = test_leaf(1).as_node();
+        let leaf: Leaf = Default::default();
         let inner_branch: TreeNode = TreeNode::Branch(Branch {
-            id: Uuid::try_parse("00000000-0000-0000-0000-000000000002").unwrap(),
+            id: id1,
             direction: Direction::Vertical,
-            children: vec![leaf],
-            ratios: vec![],
+            children: vec![leaf.as_node()],
+            ..Default::default()
         });
-        let tree: Tree = Tree {
+        let mut tree: Tree = Tree {
             root: TreeNode::Branch(Branch {
-                id: Uuid::try_parse("00000000-0000-0000-0000-000000000001").unwrap(),
-                direction: Direction::Horizontal,
+                id: id2,
                 children: vec![inner_branch],
-                ratios: vec![],
+                ..Default::default()
             }),
         };
 
         // Let mut collapse work on it
-        let mut tree = tree;
         tree.collapse();
 
         // The outer Branch should have been collapsed away:
@@ -750,12 +732,11 @@ mod tests {
         // should become Branch(V) → Leaf
         match &tree.root {
             TreeNode::Branch(b) => {
-                assert_eq!(
-                    b.id,
-                    Uuid::try_parse("00000000-0000-0000-0000-000000000002").unwrap()
-                );
+                assert_eq!(b.id, id1);
                 assert_eq!(b.direction, Direction::Vertical);
                 assert_eq!(b.children.len(), 1);
+                assert!(b.children[0].as_leaf().is_ok());
+                assert_eq!(b.children[0].get_id(), leaf.id);
             }
             _ => panic!("Expected root to remain a Branch"),
         }
@@ -764,13 +745,10 @@ mod tests {
     #[test]
     fn test_collapse_singleton_leaf_kept() {
         // A Branch with a single Leaf child should keep the Branch
-        let leaf: TreeNode = test_leaf(1).as_node();
         let mut tree: Tree = Tree {
             root: TreeNode::Branch(Branch {
-                id: Uuid::try_parse("00000000-0000-0000-0000-000000000001").unwrap(),
-                direction: Direction::Horizontal,
-                children: vec![leaf],
-                ratios: vec![],
+                children: vec![TreeNode::default()],
+                ..Default::default()
             }),
         };
 
@@ -788,8 +766,7 @@ mod tests {
 
     #[test]
     fn test_collapse_multi_child_branch_kept() {
-        let leaf_a: TreeNode = test_leaf(1).as_node();
-        let leaf_b: TreeNode = test_leaf(2).as_node();
+        let (leaf_a, leaf_b) = (TreeNode::default(), TreeNode::default());
         let mut tree: Tree = Tree {
             root: TreeNode::Branch(Branch {
                 id: Uuid::try_parse("00000000-0000-0000-0000-000000000001").unwrap(),
@@ -820,13 +797,13 @@ mod tests {
         let original_id = tree.get_leaves()[0].id;
 
         // Add a child (wraps original Leaf in Branch)
-        let new_leaf: TreeNode = test_leaf(1).as_node();
+        let new_leaf: TreeNode = Default::default();
         tree.add_child(original_id, new_leaf, None).unwrap();
 
         // Now we have a Branch with 2 children.
         // Remove the new one. This should trigger collapse.
-        let branch_id = tree.get_branches()[0].id;
-        let child_id = tree
+        let branch_id: Uuid = tree.get_branches()[0].id;
+        let child_id: Uuid = tree
             .get_leaves()
             .iter()
             .find(|l| l.id != original_id)
@@ -851,36 +828,44 @@ mod tests {
     #[test]
     fn test_complex_tree_add_remove() {
         // Build: Branch(H) → [Leaf A, Branch(V) → [Leaf B, Leaf C]]
-        let leaf_a: TreeNode = test_leaf(1).as_node();
-        let leaf_b: TreeNode = test_leaf(2).as_node();
-        let leaf_c: TreeNode = test_leaf(3).as_node();
+        let leaf_a: TreeNode = Default::default();
+        let leaf_b: TreeNode = Default::default();
+        let leaf_c: TreeNode = Default::default();
 
-        let inner_branch_id: Uuid =
-            Uuid::try_parse("00000000-0000-0000-0000-000000000002").unwrap();
+        let inner_branch_id: Uuid = Uuid::new_v4();
+
+        println!("{inner_branch_id}");
+
         let inner_branch: TreeNode = TreeNode::Branch(Branch {
             id: inner_branch_id,
             direction: Direction::Vertical,
-            children: vec![leaf_b, leaf_c],
-            ratios: vec![],
+            children: vec![leaf_b.clone(), leaf_c],
+            ..Default::default()
         });
 
-        let outer_branch_id: Uuid =
-            Uuid::try_parse("00000000-0000-0000-0000-000000000001").unwrap();
+        let outer_branch_id: Uuid = Uuid::new_v4();
+
+        println!("{inner_branch_id}");
+
         let mut tree: Tree = Tree {
             root: TreeNode::Branch(Branch {
                 id: outer_branch_id,
                 direction: Direction::Horizontal,
                 children: vec![leaf_a, inner_branch],
-                ratios: vec![],
+                ..Default::default()
             }),
         };
+
+        println!("{tree:?}");
 
         assert_eq!(tree.get_leaves().len(), 3);
         assert_eq!(tree.get_branches().len(), 2);
 
         // Remove Leaf B from inner Branch → inner has 1 child (Leaf C)
-        let removed = tree.remove_child(inner_branch_id, test_leaf(2).id).unwrap();
-        assert_eq!(removed.get_id(), test_leaf(2).id);
+        let removed: Result<TreeNode, TreeError> =
+            tree.remove_child(inner_branch_id, leaf_b.get_id());
+        assert!(removed.is_ok());
+        assert_eq!(removed.unwrap().get_id(), leaf_b.get_id());
 
         // Inner Branch now has 1 child (Leaf C) → collapse keeps Branch(V)
         // Outer still has 2 children → stays
@@ -891,63 +876,56 @@ mod tests {
     #[test]
     fn test_remove_cascades_upward() {
         // Build: Branch(outer) → Branch(inner) → Leaf
-        let leaf: TreeNode = test_leaf(1).as_node();
+        let leaf: TreeNode = Default::default();
 
-        let inner_branch_id: Uuid =
-            Uuid::try_parse("00000000-0000-0000-0000-000000000002").unwrap();
+        let inner_branch_id: Uuid = Uuid::new_v4();
         let inner_branch: TreeNode = TreeNode::Branch(Branch {
             id: inner_branch_id,
             direction: Direction::Vertical,
-            children: vec![leaf],
-            ratios: vec![],
+            children: vec![leaf.clone()],
+            ..Default::default()
         });
 
-        let outer_branch_id: Uuid =
-            Uuid::try_parse("00000000-0000-0000-0000-000000000001").unwrap();
+        let outer_branch_id: Uuid = Uuid::new_v4();
         let mut tree: Tree = Tree {
             root: TreeNode::Branch(Branch {
                 id: outer_branch_id,
                 direction: Direction::Horizontal,
                 children: vec![inner_branch],
-                ratios: vec![],
+                ..Default::default()
             }),
         };
 
         // Remove the sole leaf from inner Branch.
         // Inner becomes empty → collapsed to None → removed from outer.
         // Outer now has 0 children → collapsed to None → replaced with default Leaf.
-        let _ = tree.remove_child(inner_branch_id, test_leaf(1).id).unwrap();
+        tree.remove_child(inner_branch_id, leaf.get_id()).unwrap();
 
         // The entire tree should collapse down to a single Picker Leaf
         match &tree.root {
-            TreeNode::Leaf(l) => {
-                assert_eq!(l.widget_type, WidgetType::Picker);
-            }
-            TreeNode::Branch(_) => {
-                panic!("Expected full tree to collapse to a single Leaf");
-            }
+            TreeNode::Leaf(l) => assert_eq!(l.widget_type, WidgetType::default()),
+            TreeNode::Branch(_) => panic!("Expected full tree to collapse to a single Leaf"),
         }
     }
 
     #[test]
     fn test_remove_branch_child_then_remaining_leaf_persists() {
         // Build: Branch(H) → [Leaf A, Leaf B]
-        let leaf_a: TreeNode = test_leaf(1).as_node();
-        let leaf_b: TreeNode = test_leaf(2).as_node();
+        let leaf_a: TreeNode = Default::default();
+        let leaf_b: TreeNode = Default::default();
 
-        let branch_id: Uuid = Uuid::try_parse("00000000-0000-0000-0000-000000000001").unwrap();
+        let branch_id: Uuid = Uuid::new_v4();
         let mut tree: Tree = Tree {
             root: TreeNode::Branch(Branch {
                 id: branch_id,
-                direction: Direction::Horizontal,
-                children: vec![leaf_a, leaf_b],
-                ratios: vec![],
+                children: vec![leaf_a.clone(), leaf_b],
+                ..Default::default()
             }),
         };
 
         // Remove Leaf A → Branch now has 1 child (Leaf B)
         // Collapse keeps Branch with singleton Leaf (valid state)
-        let _ = tree.remove_child(branch_id, test_leaf(1).id).unwrap();
+        tree.remove_child(branch_id, leaf_a.get_id()).unwrap();
 
         // Should still have a Branch with one Leaf child
         match &tree.root {
