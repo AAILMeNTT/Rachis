@@ -298,16 +298,15 @@ mod proptests {
     fn file_spec() -> impl Strategy<Value = FileSpec> {
         prop_oneof![
             4 => (
-                "[a-z]{1,10}",
                 sample::select(&["rachis", "md", "json", "txt"]),
                 bool::weighted(0.3)
-            ).prop_map(|(name, ext, hidden)| FileSpec {
-                name,
+            ).prop_map(|(ext, hidden)| FileSpec {
+                name: Uuid::new_v4().to_string(),
                 hidden,
                 ext: Some(ext.to_string()),
             }),
-            1 => ("[a-z]{1,10}", bool::weighted(0.3)).prop_map(|(name, hidden)| FileSpec {
-                name,
+            1 => (bool::weighted(0.3)).prop_map(|hidden| FileSpec {
+                name: Uuid::new_v4().to_string(),
                 hidden,
                 ext: None,
             }),
@@ -328,7 +327,7 @@ mod proptests {
     }
 
     proptest! {
-        #![proptest_config(ProptestConfig::with_cases(50))]
+        #![proptest_config(ProptestConfig::with_cases(100))]
 
         #[test]
         fn skip_hidden_files_excludes_dotfiles(
@@ -345,7 +344,6 @@ mod proptests {
 
         #[test]
         fn skip_dirs_excludes_root_directory(
-            // count in 1..20usize,
             specs in collection::vec(file_spec(), 0..20),
         ) {
             let tree = create_files(&specs);
