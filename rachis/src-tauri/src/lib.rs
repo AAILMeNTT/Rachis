@@ -1,5 +1,6 @@
 mod domain;
 mod entities;
+mod errors;
 mod io;
 mod registry;
 mod tag;

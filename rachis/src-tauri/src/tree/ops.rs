@@ -1,5 +1,8 @@
 use {
-    crate::tree::{Branch, Direction, Leaf, Tree, TreeNode},
+    crate::{
+        errors::tree::TreeError,
+        tree::{Branch, Direction, Leaf, Tree, TreeNode},
+    },
     uuid::Uuid,
 };
 
@@ -21,16 +24,15 @@ impl Tree {
         target_id: Uuid,
         child_node: TreeNode,
         index: Option<usize>,
-    ) -> Result<(), String> {
+    ) -> Result<(), TreeError> {
         // Get a mutable reference to the target node by ID
-        let target: &mut TreeNode = Self::find_node_mut(&mut self.root, target_id)
-            .ok_or_else(|| "Target not found".to_string())?;
+        let target: &mut TreeNode = Self::find_node_mut(&mut self.root, target_id)?;
 
         match target {
             // If the target is a Branch, insert the child node at the specified index or append it
             TreeNode::Branch(b) => match index {
                 Some(i) if i <= b.children.len() => b.children.insert(i, child_node),
-                Some(_) | None => b.children.push(child_node),
+                _ => b.children.push(child_node),
             },
             // If the target is a Leaf, replace it with a Branch containing the old Leaf and the new child
             TreeNode::Leaf(_) => {
@@ -63,9 +65,13 @@ impl Tree {
     ///
     /// - `branch_id`: [`Uuid`] - The ID of the [`Branch`] to remove the child from.
     /// - `child_id`: [`Uuid`] - The ID of the child to remove.
-    pub fn remove_child(&mut self, branch_id: Uuid, child_id: Uuid) -> Result<TreeNode, String> {
-        let target: &mut TreeNode = Self::find_node_mut(&mut self.root, branch_id)
-            .ok_or_else(|| "Branch not found".to_string())?;
+    pub fn remove_child(
+        &mut self,
+        branch_id: impl AsRef<Uuid>,
+        child_id: impl AsRef<Uuid>,
+    ) -> Result<TreeNode, TreeError> {
+        let (branch_id, child_id) = (branch_id.as_ref(), child_id.as_ref());
+        let target: &mut TreeNode = Self::find_node_mut(&mut self.root, branch_id)?;
 
         match target {
             TreeNode::Branch(b) => {
@@ -73,8 +79,8 @@ impl Tree {
                 let index: usize = b
                     .children
                     .iter()
-                    .position(|c| c.get_id() == child_id)
-                    .ok_or_else(|| "Child not found".to_string())?;
+                    .position(|c| c.get_id() == *child_id)
+                    .ok_or(TreeError::ChildNotFound(*child_id))?;
                 // Remove the child at the found index
                 let removed: TreeNode = b.children.remove(index);
                 // Begin recursive collapse to remove empty Branches
@@ -82,7 +88,7 @@ impl Tree {
 
                 Ok(removed)
             }
-            TreeNode::Leaf(_) => Err("Cannot remove child from a Leaf".to_string()),
+            TreeNode::Leaf(l) => Err(TreeError::NoChildren(l.as_node())),
         }
     }
 
@@ -97,10 +103,14 @@ impl Tree {
     ///
     /// - `Ok(())`: The Leaf node was successfully split into a Branch.
     /// - `Err(String)`: The Leaf node could not be found or split.
-    pub fn split_leaf(&mut self, leaf_id: Uuid, direction: Direction) -> Result<(), String> {
+    pub fn split_leaf(
+        &mut self,
+        leaf_id: impl AsRef<Uuid>,
+        direction: Direction,
+    ) -> Result<&mut TreeNode, TreeError> {
+        let leaf_id: &Uuid = leaf_id.as_ref();
         // Get a mutable reference to the node to split
-        let target: &mut TreeNode = Self::find_node_mut(&mut self.root, leaf_id)
-            .ok_or_else(|| format!("Node with ID {} not found in Tree", leaf_id).to_string())?;
+        let target: &mut TreeNode = Self::find_node_mut(&mut self.root, leaf_id)?;
 
         match target {
             // If the node is a Leaf, turn it into a Branch with it and a new Leaf as children
@@ -112,11 +122,9 @@ impl Tree {
                     ..Default::default()
                 });
 
-                Ok(())
+                Ok(target)
             }
-            TreeNode::Branch(_) => {
-                Err(format!("ID {} belongs to a Branch, not a Leaf", leaf_id).to_string())
-            }
+            TreeNode::Branch(b) => Err(TreeError::NoChildren(b.as_node())),
         }
     }
 
@@ -216,7 +224,7 @@ impl Tree {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::tree::WidgetType;
+    use crate::{errors::tree::TreeError, tree::WidgetType};
 
     // ========================================================================
     // Helper functions
@@ -256,7 +264,7 @@ mod tests {
         println!("Random Branch ID: {branch_id:#?}");
 
         // Verify random Branch does not exist
-        let result: Result<&Branch, String> = tree.find_branch(&branch_id);
+        let result: Result<&Branch, TreeError> = tree.find_branch(&branch_id);
         println!("Result: {result:#?}");
         assert!(result.is_err());
     }
@@ -274,7 +282,7 @@ mod tests {
         println!("Random Leaf ID: {leaf_id:#?}");
 
         // Verify random Leaf does not exist
-        let result: Result<&Leaf, String> = tree.find_leaf(&leaf_id);
+        let result: Result<&Leaf, TreeError> = tree.find_leaf(&leaf_id);
         println!("Result: {result:#?}");
         assert!(result.is_err());
     }
@@ -521,7 +529,7 @@ mod tests {
         let leaf: TreeNode = test_leaf(1).as_node();
         println!("Leaf to add: {leaf:#?}");
 
-        let result: Result<(), String> = tree.add_child(Uuid::new_v4(), leaf, None);
+        let result: Result<(), TreeError> = tree.add_child(Uuid::new_v4(), leaf, None);
         println!("Tree after add: {tree:#?}");
         println!("Result: {result:#?}");
         assert!(result.is_err());
@@ -595,7 +603,7 @@ mod tests {
         };
         let branch_id = tree.get_branches()[0].id;
 
-        let result: Result<TreeNode, String> = tree.remove_child(branch_id, Uuid::new_v4());
+        let result: Result<TreeNode, TreeError> = tree.remove_child(branch_id, Uuid::new_v4());
         assert!(result.is_err());
     }
 
@@ -604,7 +612,7 @@ mod tests {
         let mut tree: Tree = Default::default();
         let leaf_id: Uuid = tree.get_leaves()[0].id;
 
-        let result: Result<TreeNode, String> = tree.remove_child(leaf_id, Uuid::new_v4());
+        let result: Result<TreeNode, TreeError> = tree.remove_child(leaf_id, Uuid::new_v4());
         assert!(result.is_err());
     }
 
@@ -847,7 +855,8 @@ mod tests {
         let leaf_b: TreeNode = test_leaf(2).as_node();
         let leaf_c: TreeNode = test_leaf(3).as_node();
 
-        let inner_branch_id = Uuid::try_parse("00000000-0000-0000-0000-000000000002").unwrap();
+        let inner_branch_id: Uuid =
+            Uuid::try_parse("00000000-0000-0000-0000-000000000002").unwrap();
         let inner_branch: TreeNode = TreeNode::Branch(Branch {
             id: inner_branch_id,
             direction: Direction::Vertical,
@@ -855,7 +864,8 @@ mod tests {
             ratios: vec![],
         });
 
-        let outer_branch_id: Uuid = Uuid::try_parse("00000000-0000-0000-0000-000000000001").unwrap();
+        let outer_branch_id: Uuid =
+            Uuid::try_parse("00000000-0000-0000-0000-000000000001").unwrap();
         let mut tree: Tree = Tree {
             root: TreeNode::Branch(Branch {
                 id: outer_branch_id,
@@ -883,7 +893,8 @@ mod tests {
         // Build: Branch(outer) → Branch(inner) → Leaf
         let leaf: TreeNode = test_leaf(1).as_node();
 
-        let inner_branch_id: Uuid = Uuid::try_parse("00000000-0000-0000-0000-000000000002").unwrap();
+        let inner_branch_id: Uuid =
+            Uuid::try_parse("00000000-0000-0000-0000-000000000002").unwrap();
         let inner_branch: TreeNode = TreeNode::Branch(Branch {
             id: inner_branch_id,
             direction: Direction::Vertical,
@@ -891,7 +902,8 @@ mod tests {
             ratios: vec![],
         });
 
-        let outer_branch_id: Uuid = Uuid::try_parse("00000000-0000-0000-0000-000000000001").unwrap();
+        let outer_branch_id: Uuid =
+            Uuid::try_parse("00000000-0000-0000-0000-000000000001").unwrap();
         let mut tree: Tree = Tree {
             root: TreeNode::Branch(Branch {
                 id: outer_branch_id,
@@ -923,7 +935,7 @@ mod tests {
         let leaf_a: TreeNode = test_leaf(1).as_node();
         let leaf_b: TreeNode = test_leaf(2).as_node();
 
-        let branch_id = Uuid::parse_str("00000000-0000-0000-0000-000000000001").unwrap();
+        let branch_id: Uuid = Uuid::try_parse("00000000-0000-0000-0000-000000000001").unwrap();
         let mut tree: Tree = Tree {
             root: TreeNode::Branch(Branch {
                 id: branch_id,

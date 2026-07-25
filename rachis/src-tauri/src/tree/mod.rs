@@ -1,7 +1,9 @@
 pub mod ops;
 
 use {
+    crate::errors::tree::TreeError,
     serde::{Deserialize, Serialize},
+    std::fmt::{Display, Formatter, Result as FmtResult},
     ts_rs::TS,
     uuid::Uuid,
 };
@@ -11,7 +13,7 @@ use {
 /// # Fields
 ///
 /// - `root`: [`TreeNode`] - The root of the Workspace tree.
-#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[derive(Clone, Debug, Default, Serialize, Deserialize, TS)]
 #[ts(export)]
 pub struct Tree {
     /// The root of the Workspace tree.
@@ -20,30 +22,46 @@ pub struct Tree {
 
 #[allow(dead_code)]
 impl Tree {
-    pub fn new() -> Self {
-        Self {
-            root: TreeNode::Leaf(Leaf::new()),
-        }
-    }
-
+    /// Returns all [Nodes](TreeNode) in the tree.
+    ///
+    /// # Returns
+    ///
+    /// - [`Vec<&TreeNode>`](TreeNode) - A vector of all nodes in the tree
     pub fn get_nodes(&self) -> Vec<&TreeNode> {
         self.root.get_nodes()
     }
 
+    /// Returns all [Leaves](Leaf) in the tree.
+    ///
+    /// # Returns
+    ///
+    /// - [`Vec<&Leaf>`](Leaf) - A vector of all leaves in the tree
     pub fn get_leaves(&self) -> Vec<&Leaf> {
         self.root.get_leaves()
     }
 
+    /// Returns all [Branches](Branch) in the tree.
+    ///
+    /// # Returns
+    ///
+    /// - [`Vec<&Branch>`](Branch) - A vector of all branches in the tree
     pub fn get_branches(&self) -> Vec<&Branch> {
         self.root.get_branches()
     }
 
-    pub fn find_node(&self, node_id: Uuid) -> Result<&TreeNode, String> {
+    /// Finds a node by its ID, returning a reference if found.
+    ///
+    /// # Returns
+    ///
+    /// - [`Ok(&TreeNode)`](TreeNode) - A reference to the node if found
+    /// - [`Err(TreeError::NodeNotFound)`](TreeError::NodeNotFound) - An error if the node is not found
+    pub fn find_node(&self, node_id: impl AsRef<Uuid>) -> Result<&TreeNode, TreeError> {
+        let node_id: &Uuid = node_id.as_ref();
         self.root
             .get_nodes()
             .into_iter()
-            .find(|n| n.get_id() == node_id)
-            .ok_or_else(|| "Node not found".to_string())
+            .find(|n| n.get_id() == *node_id)
+            .ok_or(TreeError::NodeNotFound(*node_id))
     }
 
     /// Finds a node by its ID, returning a mutable reference if found.
@@ -80,20 +98,22 @@ impl Tree {
         }
     }
 
-    pub fn find_branch(&self, branch_id: &Uuid) -> Result<&Branch, String> {
+    pub fn find_branch(&self, branch_id: impl AsRef<Uuid>) -> Result<&Branch, TreeError> {
+        let branch_id: &Uuid = branch_id.as_ref();
         self.root
             .get_branches()
             .into_iter()
             .find(|b| &b.id == branch_id)
-            .ok_or_else(|| "Branch not found".to_string())
+            .ok_or(TreeError::BranchNotFound(*branch_id))
     }
 
-    pub fn find_leaf(&self, leaf_id: &Uuid) -> Result<&Leaf, String> {
+    pub fn find_leaf(&self, leaf_id: impl AsRef<Uuid>) -> Result<&Leaf, TreeError> {
+        let leaf_id: &Uuid = leaf_id.as_ref();
         self.root
             .get_leaves()
             .into_iter()
             .find(|l| &l.id == leaf_id)
-            .ok_or_else(|| "Leaf not found".to_string())
+            .ok_or(TreeError::LeafNotFound(*leaf_id))
     }
 }
 
@@ -101,7 +121,7 @@ impl Tree {
 ///
 /// - [`Branch`]: Splits its space among child nodes along a direction.
 /// - [`Leaf`]: A widget instance at a position in the tree.
-#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[derive(Clone, Debug, Serialize, Deserialize, TS, PartialEq, Eq)]
 #[ts(export)]
 pub enum TreeNode {
     /// A container that splits space among its children
@@ -112,10 +132,6 @@ pub enum TreeNode {
 
 #[allow(dead_code)]
 impl TreeNode {
-    pub fn new() -> Self {
-        TreeNode::Leaf(Leaf::new())
-    }
-
     pub fn is_branch(&self) -> bool {
         matches!(self, TreeNode::Branch(_))
     }
@@ -235,7 +251,7 @@ impl Display for TreeNode {
 /// - `direction`: [`Direction`] - The direction along which children are laid out (horizontal or vertical)
 /// - `children`: Vec<[`TreeNode`]> - Child nodes in order. 0..N children
 /// - `ratios`: Vec<f32> - Relative sizes for each child. Must match `children.len()` when active
-#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[derive(Clone, Debug, Serialize, Deserialize, TS, PartialEq, Eq)]
 #[ts(export)]
 pub struct Branch {
     /// Unique identifier for this Branch
@@ -245,16 +261,11 @@ pub struct Branch {
     /// Child nodes in order. 0..N children
     pub children: Vec<TreeNode>,
     /// Relative sizes for each child. Must match `children.len()` when active
-    pub ratios: Vec<f32>,
+    pub ratios: Vec<u32>,
 }
 
 #[allow(dead_code)]
 impl Branch {
-    /// Creates a new, empty Branch.
-    pub fn new() -> Self {
-        Self::default()
-    }
-
     /// Returns this Branch as a [`TreeNode::Branch`](TreeNode).
     pub fn as_node(&self) -> TreeNode {
         TreeNode::Branch(self.clone())
@@ -290,10 +301,22 @@ impl Default for Branch {
     fn default() -> Self {
         Self {
             id: Uuid::new_v4(),
-            direction: Direction::Horizontal,
+            direction: Direction::default(),
             children: Vec::new(),
             ratios: Vec::new(),
         }
+    }
+}
+
+impl Display for Branch {
+    fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
+        write!(
+            f,
+            "Branch(id={}, dir={}, children={})",
+            self.id,
+            self.direction,
+            self.children.len(),
+        )
     }
 }
 
@@ -308,7 +331,7 @@ impl Default for Branch {
 ///     - Editor widgets: the UUID of the Rachis being edited
 ///     - Notes widgets: the UUID of the note being viewed
 ///     - Picker/Empty widgets: `None`
-#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[derive(Clone, Debug, Serialize, Deserialize, TS, PartialEq, Eq)]
 #[ts(export)]
 pub struct Leaf {
     /// Unique identifier for this Leaf
@@ -324,11 +347,6 @@ pub struct Leaf {
 }
 
 impl Leaf {
-    /// Creates a new, empty Leaf.
-    pub fn new() -> Self {
-        Self::default()
-    }
-
     /// Returns this Leaf as a [`TreeNode::Leaf`](TreeNode).
     pub fn as_node(&self) -> TreeNode {
         TreeNode::Leaf(self.clone())
@@ -339,8 +357,21 @@ impl Default for Leaf {
     fn default() -> Self {
         Self {
             id: Uuid::new_v4(),
-            widget_type: WidgetType::Picker,
+            widget_type: WidgetType::default(),
             widget_instance_id: None,
+        }
+    }
+}
+
+impl Display for Leaf {
+    fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
+        match self.widget_instance_id {
+            Some(instance_id) => write!(
+                f,
+                "Leaf(id={}, widget={}, instance={})",
+                self.id, self.widget_type, instance_id
+            ),
+            None => write!(f, "Leaf(id={}, widget={})", self.id, self.widget_type),
         }
     }
 }
@@ -377,6 +408,20 @@ pub enum WidgetType {
     Empty,
 }
 
+impl Display for WidgetType {
+    fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
+        match self {
+            WidgetType::Editor => write!(f, "Editor"),
+            WidgetType::Outline => write!(f, "Outline"),
+            WidgetType::Notes => write!(f, "Notes"),
+            WidgetType::Story => write!(f, "Story"),
+            WidgetType::Tags => write!(f, "Tags"),
+            WidgetType::Picker => write!(f, "Picker"),
+            WidgetType::Empty => write!(f, "Empty"),
+        }
+    }
+}
+
 /// The direction along which a [`Branch`] lays out its children.
 ///
 /// # Variants
@@ -384,7 +429,7 @@ pub enum WidgetType {
 /// - [`Horizontal`](Direction::Horizontal): Children are laid out side-by-side,
 /// left to right
 /// - [`Vertical`](Direction::Vertical): Children are laid out top-to-bottom
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS, Default)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS, Default)]
 #[ts(export)]
 pub enum Direction {
     /// Children are laid out side-by-side, left to right
@@ -392,6 +437,15 @@ pub enum Direction {
     Horizontal,
     /// Children are laid out top-to-bottom
     Vertical,
+}
+
+impl Display for Direction {
+    fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
+        match self {
+            Direction::Horizontal => write!(f, "Horizontal"),
+            Direction::Vertical => write!(f, "Vertical"),
+        }
+    }
 }
 
 #[cfg(test)]

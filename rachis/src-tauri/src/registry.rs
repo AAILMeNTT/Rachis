@@ -581,7 +581,7 @@ impl Registry {
         let id: &Uuid = id.as_ref();
         let entry: &mut RegistryEntry = self
             .get_mut(id)
-            .ok_or_else(|| FlightError::Custom(format!("Flight not found: {id:#?}")))?;
+            .ok_or(FlightError::Custom(format!("Flight not found: {id:#?}")))?;
 
         if let Some(name) = patch.name {
             let name: &str = name.trim();
