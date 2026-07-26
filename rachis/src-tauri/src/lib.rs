@@ -10,11 +10,13 @@ use {
     crate::{
         domain::rachis::{Rachis, RachisType},
         entities::{files::ProjectFile, flight_meta::FlightMetadata},
+        errors::tree::TreeError,
         io::{
             content::FileType,
             context::{FlightContext, FlightError},
         },
         registry::{ReconcileReport, Registry, RegistryEntry, RegistryEntryPatch},
+        tree::WidgetType,
     },
     std::{
         path::PathBuf,
@@ -232,6 +234,32 @@ fn reconcile_registry_flights(state: State<AppData>) -> Result<Vec<ReconcileRepo
     Ok(reports)
 }
 
+// ———————— UI stuff ————————
+
+#[tauri::command(rename_all = "snake_case")]
+fn set_widget_type(
+    state: State<AppData>,
+    leaf_id: Uuid,
+    widget_type: WidgetType,
+) -> Result<(), String> {
+    // Try to lock the flight mutex and get a reference to the FlightContext
+    let mut flight_lock: MutexGuard<'_, Option<FlightContext>> =
+        state.flight.lock().map_err(|e| e.to_string())?;
+    let ctx: &mut FlightContext = flight_lock.as_mut().ok_or("No Flight is open")?;
+
+    ctx.tree_mut()
+        .ok_or("No tree loaded!".to_string())?
+        .set_widget_type(leaf_id, widget_type)
+        .map_err(|e: TreeError| e.to_string())?;
+
+    ctx.save_layout(Uuid::new_v4(), "default")
+        .map_err(|e: FlightError| e.to_string())?;
+
+    Ok(())
+}
+
+// ———————— Main ————————
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -270,6 +298,7 @@ pub fn run() {
             get_flight,
             // Misc
             parse_tag,
+            set_widget_type,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -21,12 +21,16 @@ impl ContentService {
         }
     }
 
-    pub fn new_file(&self, rel_path: impl AsRef<Path>, contents: &str) -> Result<(), IoError> {
+    pub fn new_file(
+        &self,
+        rel_path: impl AsRef<Path>,
+        content: impl AsRef<str>,
+    ) -> Result<(), IoError> {
         let rel_path: &Path = rel_path.as_ref();
         // Ensure parent directories exist
         fs::create_dir_all(self.flight_dir.join(rel_path.parent().unwrap()))?;
         // Create the file with the title and its contents
-        self.write_file(rel_path, contents)
+        self.write_file(rel_path, content)
     }
 
     /// Reads file contents from the given relative path.

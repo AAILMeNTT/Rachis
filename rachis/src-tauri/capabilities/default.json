@@ -18,7 +18,8 @@
             "save_file",
             "create_flight",
             "get_flight",
-            "parse_tag"
+            "parse_tag",
+            "set_widget_type"
         ]
     }
 }

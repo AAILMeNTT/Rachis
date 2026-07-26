@@ -17,38 +17,10 @@ use {
 #[ts(export)]
 pub struct Tree {
     /// The root of the Workspace tree.
-    pub root: TreeNode,
+    root: TreeNode,
 }
 
-#[allow(dead_code)]
 impl Tree {
-    /// Returns all [Nodes](TreeNode) in the tree.
-    ///
-    /// # Returns
-    ///
-    /// - [`Vec<&TreeNode>`](TreeNode) - A vector of all nodes in the tree
-    pub fn get_nodes(&self) -> Vec<&TreeNode> {
-        self.root.get_nodes()
-    }
-
-    /// Returns all [Leaves](Leaf) in the tree.
-    ///
-    /// # Returns
-    ///
-    /// - [`Vec<&Leaf>`](Leaf) - A vector of all leaves in the tree
-    pub fn get_leaves(&self) -> Vec<&Leaf> {
-        self.root.get_leaves()
-    }
-
-    /// Returns all [Branches](Branch) in the tree.
-    ///
-    /// # Returns
-    ///
-    /// - [`Vec<&Branch>`](Branch) - A vector of all branches in the tree
-    pub fn get_branches(&self) -> Vec<&Branch> {
-        self.root.get_branches()
-    }
-
     /// Finds a node by its ID, returning a reference if found.
     ///
     /// # Returns

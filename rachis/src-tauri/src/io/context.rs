@@ -6,6 +6,7 @@ use {
             content::{ContentService, FileType},
             finder::Finder,
         },
+        tree::Tree,
     },
     chrono::Utc,
     rusqlite::{Connection, Error as RsqlError, Statement, params},
@@ -29,6 +30,7 @@ pub enum FlightError {
     Io(IoError),
     Walk(WalkError),
     Custom(String),
+    Json(serde_json::Error),
 }
 
 impl Display for FlightError {
@@ -37,12 +39,19 @@ impl Display for FlightError {
             FlightError::Db(e) => write!(f, "Database error: {e}"),
             FlightError::Io(e) => write!(f, "File I/O error: {e}"),
             FlightError::Walk(e) => write!(f, "Walk error: {e}"),
+            FlightError::Json(e) => write!(f, "JSON error: {e}"),
             FlightError::Custom(msg) => write!(f, "Error: {msg}"),
         }
     }
 }
 
 impl Error for FlightError {}
+
+impl From<serde_json::Error> for FlightError {
+    fn from(e: serde_json::Error) -> Self {
+        FlightError::Json(e)
+    }
+}
 
 impl From<RsqlError> for FlightError {
     fn from(e: RsqlError) -> Self {
@@ -69,6 +78,7 @@ impl From<WalkError> for FlightError {
 /// - `content`: [`ContentService`] - The service allowing I/O operations on content files
 /// - `db`: [`Mutex<Connection>`] - A mutex-protected connection to the `.flight` metadata database
 /// - `dir`: [`PathBuf`] - The project directory
+/// - `tree`: [`Option<Tree>`](Tree) - The workspace tree
 pub struct FlightContext {
     /// The service allowing I/O operations on content files
     content_service: ContentService,
@@ -76,6 +86,8 @@ pub struct FlightContext {
     db: Mutex<Connection>,
     /// The project directory
     dir: PathBuf,
+    /// The workspace tree
+    tree: Option<Tree>,
 }
 
 impl FlightContext {
@@ -171,12 +183,21 @@ impl FlightContext {
             content_service: ContentService::new(&flight_dir),
             db: Mutex::new(flight_db),
             dir: flight_dir,
+            tree: None,
         })
     }
 
     /// Returns the project directory path.
     pub fn dir(&self) -> &Path {
         &self.dir
+    }
+
+    pub fn tree(&self) -> Option<&Tree> {
+        self.tree.as_ref()
+    }
+
+    pub fn tree_mut(&mut self) -> Option<&mut Tree> {
+        self.tree.as_mut()
     }
 
     /// Scans the project directory for content files and indexes them in `.flight`.
@@ -609,6 +630,52 @@ impl FlightContext {
 
         self.content_service.write_file(path, &content)?;
         self.update_file_metadata(file_id, path, content)
+    }
+
+    /// Queries the `workspace_layouts` table for a workspace of some name
+    ///
+    /// # Arguments
+    ///
+    /// - `id`: [`impl AsRef<Uuid>`](Uuid) - The stable UUID of the workspace layout
+    ///
+    /// # Returns
+    ///
+    /// [`Ok(Some(Tree))`](Tree) - The loaded workspace tree, if one exists
+    /// `Ok(None)` - No workspace tree exists for the given ID
+    /// [`Err(FlightError)`](FlightError) - An error occurred while loading the layout
+    pub fn load_layout(&mut self, id: impl AsRef<Uuid>) -> Result<Option<Tree>, FlightError> {
+        let tree_json: Option<String> = {
+            let db = self.db.lock().unwrap();
+            let mut stmt =
+                db.prepare_cached("SELECT tree_json FROM workspace_layouts WHERE id = ?1")?;
+            stmt.query_row(params![id.as_ref().to_string()], |row| row.get("tree_json"))
+                .ok()
+        };
+
+        Ok(tree_json.map_or(None, |json| {
+            let tree: Tree = serde_json::from_str(&json).ok()?;
+            self.tree = Some(tree.clone());
+            Some(tree)
+        }))
+    }
+
+    pub fn save_layout(
+        &mut self,
+        id: impl AsRef<Uuid>,
+        name: impl AsRef<str>,
+    ) -> Result<(), FlightError> {
+        let tree_json: String = serde_json::to_string(&self.tree)?;
+        let db: MutexGuard<'_, Connection> = self.db.lock().unwrap();
+        let mut stmt = db.prepare_cached(
+            "INSERT INTO workspace_layouts (id, name, tree_json) VALUES (?1, ?2, ?3)
+            ON CONFLICT (id) DO UPDATE SET name = ?2, tree_json = ?3",
+        )?;
+        stmt.execute(params![
+            id.as_ref().to_string(),
+            name.as_ref().to_string(),
+            tree_json
+        ])?;
+        Ok(())
     }
 }
 

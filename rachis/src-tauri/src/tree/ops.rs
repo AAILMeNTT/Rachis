@@ -1,7 +1,7 @@
 use {
     crate::{
         errors::tree::TreeError,
-        tree::{Branch, Direction, Leaf, Tree, TreeNode},
+        tree::{Branch, Direction, Leaf, Tree, TreeNode, WidgetType},
     },
     uuid::Uuid,
 };
@@ -113,7 +113,6 @@ impl Tree {
         leaf_id: impl AsRef<Uuid>,
         direction: Direction,
     ) -> Result<&mut TreeNode, TreeError> {
-        let leaf_id: &Uuid = leaf_id.as_ref();
         // Get a mutable reference to the node to split
         let target: &mut TreeNode = Self::find_node_mut(&mut self.root, leaf_id)?;
 
@@ -123,7 +122,7 @@ impl Tree {
                 // Replace the Leaf with a Branch containing the original Leaf and a new Leaf
                 *target = TreeNode::Branch(Branch {
                     direction,
-                    children: vec![l.as_node(), TreeNode::Leaf(Default::default())],
+                    children: vec![l.as_node(), TreeNode::default()],
                     ..Default::default()
                 });
 
@@ -131,6 +130,16 @@ impl Tree {
             }
             TreeNode::Branch(b) => Err(TreeError::NoChildren(b.as_node())),
         }
+    }
+
+    pub fn set_widget_type(
+        &mut self,
+        leaf_id: impl AsRef<Uuid>,
+        widget_type: WidgetType,
+    ) -> Result<&mut Leaf, TreeError> {
+        let leaf: &mut Leaf = Self::find_node_mut(&mut self.root, leaf_id)?.as_leaf_mut()?;
+        leaf.widget_type = widget_type;
+        Ok(leaf)
     }
 
     /// Collapses the workspace tree bottom-up, removing empty Branches (Rule 1),
@@ -278,7 +287,7 @@ mod tests {
         println!("Tree: {tree:#?}");
 
         // Get branches and verify that only root branch is returned
-        let branches: Vec<&Branch> = tree.get_branches();
+        let branches: Vec<&Branch> = tree.root.get_branches();
         println!("Branches: {branches:#?}");
         assert!(branches.len() == 1);
 
@@ -295,7 +304,7 @@ mod tests {
         println!("Tree: {tree:#?}");
 
         // Get leaves and verify that only root leaf is returned
-        let leaves: Vec<&Leaf> = tree.get_leaves();
+        let leaves: Vec<&Leaf> = tree.root.get_leaves();
         println!("Leaves: {leaves:#?}");
         assert!(leaves.len() == 1);
 
@@ -339,7 +348,7 @@ mod tests {
         };
         // println!("Tree: {tree:#?}");
 
-        let branches: Vec<&Branch> = tree.get_branches();
+        let branches: Vec<&Branch> = tree.root.get_branches();
         // Feel free to uncomment if you're brave
         // (Maybe... could it be useful for debugging/maintenance to add a "display()" func to visualise what a Tree/TreeNode looks like?)
         // println!("Branches: {branches:#?}");
@@ -386,7 +395,7 @@ mod tests {
         };
         // println!("Tree: {tree:#?}");
 
-        let leaves: Vec<&Leaf> = tree.get_leaves();
+        let leaves: Vec<&Leaf> = tree.root.get_leaves();
         println!("Leaves: {leaves:#?}");
         println!("Leaf count: {:?}", leaves.len());
         assert!(leaves.len() == 5);
@@ -413,6 +422,7 @@ mod tests {
 
         // Get the initial tree's root ID (a Picker Leaf)
         let leaves_before: Vec<Uuid> = tree
+            .root
             .get_leaves()
             .iter()
             .map(|l| l.id)
@@ -429,11 +439,11 @@ mod tests {
         println!("Tree after addition: {tree:#?}");
 
         // The tree should now have a Branch as root (was a Leaf, got wrapped)
-        let branches: Vec<&Branch> = tree.get_branches();
+        let branches: Vec<&Branch> = tree.root.get_branches();
         println!("Branch count: {:?}", branches.len());
         assert_eq!(branches.len(), 1);
 
-        let leaves: Vec<&Leaf> = tree.get_leaves();
+        let leaves: Vec<&Leaf> = tree.root.get_leaves();
         println!("Leaves: {leaves:#?}");
         println!("Leaf count: {:?}", leaves.len());
         assert_eq!(leaves.len(), 2);
@@ -461,7 +471,7 @@ mod tests {
         tree.add_child(branch_id, leaf_b, None).unwrap();
         println!("Tree after additions: {tree:#?}");
 
-        let leaves: Vec<&Leaf> = tree.get_leaves();
+        let leaves: Vec<&Leaf> = tree.root.get_leaves();
         println!("Leaves: {leaves:#?}");
         assert_eq!(leaves.len(), 2);
     }
@@ -522,7 +532,7 @@ mod tests {
         // Adding to a Leaf should wrap it in a Branch
         let mut tree: Tree = Default::default();
         println!("Tree before add: {tree:#?}");
-        let original_leaf_id: Uuid = tree.get_leaves()[0].id;
+        let original_leaf_id: Uuid = tree.root.get_leaves()[0].id;
         println!("Original leaf id: {original_leaf_id:#?}");
         let new_leaf: TreeNode = Default::default();
         println!("New leaf: {new_leaf:#?}");
@@ -553,7 +563,7 @@ mod tests {
             root: TreeNode::Branch(Default::default()),
         };
         println!("Tree: {tree:#?}");
-        let branch_id: Uuid = tree.get_branches()[0].id;
+        let branch_id: Uuid = tree.root.get_branches()[0].id;
         println!("Branch ID: {branch_id:#?}");
 
         let leaf: TreeNode = TreeNode::Leaf(Leaf {
@@ -564,7 +574,7 @@ mod tests {
         tree.add_child(branch_id, leaf, None).unwrap();
         println!("Tree after add: {tree:#?}");
 
-        let child_id: Uuid = tree.get_leaves()[0].id;
+        let child_id: Uuid = tree.root.get_leaves()[0].id;
         println!("Child ID: {child_id:#?}");
         let removed: TreeNode = tree.remove_child(branch_id, child_id).unwrap();
         println!("Tree after remove: {tree:#?}");
@@ -573,7 +583,7 @@ mod tests {
         assert_eq!(removed.get_id(), child_id);
 
         // remove_child() collapses the branch into a single PickerWidget Leaf,
-        let leaves: Vec<&Leaf> = tree.get_leaves();
+        let leaves: Vec<&Leaf> = tree.root.get_leaves();
         assert_eq!(leaves.len(), 1);
         assert_eq!(leaves[0].widget_type, WidgetType::default());
     }
@@ -583,7 +593,7 @@ mod tests {
         let mut tree: Tree = Tree {
             root: TreeNode::Branch(Default::default()),
         };
-        let branch_id = tree.get_branches()[0].id;
+        let branch_id = tree.root.get_branches()[0].id;
 
         let result: Result<TreeNode, TreeError> = tree.remove_child(branch_id, Uuid::new_v4());
         assert!(result.is_err());
@@ -592,7 +602,7 @@ mod tests {
     #[test]
     fn test_remove_child_from_leaf() {
         let mut tree: Tree = Default::default();
-        let leaf_id: Uuid = tree.get_leaves()[0].id;
+        let leaf_id: Uuid = tree.root.get_leaves()[0].id;
 
         let result: Result<TreeNode, TreeError> = tree.remove_child(leaf_id, Uuid::new_v4());
         assert!(result.is_err());
@@ -612,7 +622,7 @@ mod tests {
         let mut tree: Tree = Tree {
             root: TreeNode::Leaf(editor_leaf),
         };
-        let leaf_id: Uuid = tree.get_leaves()[0].id;
+        let leaf_id: Uuid = tree.root.get_leaves()[0].id;
 
         tree.split_leaf(leaf_id, Direction::Horizontal).unwrap();
 
@@ -651,7 +661,7 @@ mod tests {
     #[test]
     fn test_split_leaf_vertical() {
         let mut tree: Tree = Default::default();
-        let leaf_id: Uuid = tree.get_leaves()[0].id;
+        let leaf_id: Uuid = tree.root.get_leaves()[0].id;
 
         tree.split_leaf(leaf_id, Direction::Vertical).unwrap();
 
@@ -669,7 +679,7 @@ mod tests {
         let mut tree: Tree = Tree {
             root: TreeNode::Branch(Default::default()),
         };
-        let branch_id = tree.get_branches()[0].id;
+        let branch_id = tree.root.get_branches()[0].id;
 
         let result = tree.split_leaf(branch_id, Direction::Horizontal);
         assert!(result.is_err());
@@ -794,7 +804,7 @@ mod tests {
     #[test]
     fn test_add_then_remove_returns_to_singleton_branch() {
         let mut tree: Tree = Default::default();
-        let original_id = tree.get_leaves()[0].id;
+        let original_id = tree.root.get_leaves()[0].id;
 
         // Add a child (wraps original Leaf in Branch)
         let new_leaf: TreeNode = Default::default();
@@ -802,8 +812,9 @@ mod tests {
 
         // Now we have a Branch with 2 children.
         // Remove the new one. This should trigger collapse.
-        let branch_id: Uuid = tree.get_branches()[0].id;
+        let branch_id: Uuid = tree.root.get_branches()[0].id;
         let child_id: Uuid = tree
+            .root
             .get_leaves()
             .iter()
             .find(|l| l.id != original_id)
@@ -858,8 +869,8 @@ mod tests {
 
         println!("{tree:?}");
 
-        assert_eq!(tree.get_leaves().len(), 3);
-        assert_eq!(tree.get_branches().len(), 2);
+        assert_eq!(tree.root.get_leaves().len(), 3);
+        assert_eq!(tree.root.get_branches().len(), 2);
 
         // Remove Leaf B from inner Branch → inner has 1 child (Leaf C)
         let removed: Result<TreeNode, TreeError> =
@@ -869,8 +880,8 @@ mod tests {
 
         // Inner Branch now has 1 child (Leaf C) → collapse keeps Branch(V)
         // Outer still has 2 children → stays
-        assert_eq!(tree.get_leaves().len(), 2);
-        assert_eq!(tree.get_branches().len(), 2);
+        assert_eq!(tree.root.get_leaves().len(), 2);
+        assert_eq!(tree.root.get_branches().len(), 2);
     }
 
     #[test]
