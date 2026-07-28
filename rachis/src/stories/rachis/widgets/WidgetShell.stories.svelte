@@ -1,12 +1,12 @@
 <script module lang="ts">
     import { defineMeta } from "@storybook/addon-svelte-csf";
-    import BaseWidget from "$lib/components/widgets/BaseWidget.svelte";
+    import WidgetShell from "$lib/components/widgets/WidgetShell.svelte";
     import { WidgetType } from "$lib/types/WidgetType";
     import { stubLeaf } from "./stubs.svelte";
 
     const { Story } = defineMeta({
         title: "Widgets/Base",
-        component: BaseWidget,
+        component: WidgetShell,
         args: {
             leaf: stubLeaf(),
             isLoading: false,

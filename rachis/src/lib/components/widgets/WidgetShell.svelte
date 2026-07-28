@@ -1,6 +1,6 @@
 <!--
     @component
-    BaseWidget is the shell for all widgets, providing a consistent title bar
+    WidgetShell is the shell for all widgets, providing a consistent title bar
     and close button (...soon™️).
 
     If you want to create a new Widget, just create a new Svelte component in

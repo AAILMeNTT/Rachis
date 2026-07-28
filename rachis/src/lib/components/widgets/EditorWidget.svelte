@@ -2,8 +2,8 @@
     @component
     EditorWidget is used to display the main editing area for users to write in.
 
-    Rendered by the BaseWidget component; this file simply describes the child
-    data to be rendered within the BaseWidget shell.
+    Rendered by the WidgetShell component; this file simply describes the child
+    data to be rendered within the WidgetShell shell.
 -->
 <script lang="ts">
     interface Props {

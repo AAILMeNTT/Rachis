@@ -1,6 +1,6 @@
 <script lang="ts">
     import type { Tree } from "$lib/types/Tree";
-    import BaseWidget from "$lib/components/widgets/BaseWidget.svelte";
+    import WidgetShell from "$lib/components/widgets/WidgetShell.svelte";
     import BranchView from "$lib/components/workspace/BranchView.svelte";
 
     let { root }: Tree = $props();
@@ -12,6 +12,6 @@
         <BranchView branch={root.Branch} />
     {:else}
         <!-- i'll give you three guesses -->
-        <BaseWidget leaf={root.Leaf} />
+        <WidgetShell leaf={root.Leaf} />
     {/if}
 </div>

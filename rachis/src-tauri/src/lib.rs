@@ -16,13 +16,15 @@ use {
             context::{FlightContext, FlightError},
         },
         registry::{ReconcileReport, Registry, RegistryEntry, RegistryEntryPatch},
-        tree::WidgetType,
+        tree::{Tree, WidgetType},
     },
+    log::trace,
     std::{
         path::PathBuf,
         sync::{Mutex, MutexGuard},
     },
     tauri::{Manager, State},
+    tauri_plugin_log::{Target, TargetKind},
     uuid::Uuid,
 };
 
@@ -59,18 +61,24 @@ fn create_flight(
 }
 
 #[tauri::command(rename_all = "snake_case")]
-fn get_flight(
-    state: State<AppData>,
-    flight_path: String,
-    flight_name: String,
-    flight_id: Uuid,
-) -> Result<Option<FlightMetadata>, String> {
-    let ctx: FlightContext = FlightContext::open_conn(flight_path, flight_name)
+fn get_flight(state: State<AppData>, flight_id: Uuid) -> Result<Option<FlightMetadata>, String> {
+    // Get the Flight from the Registry
+    trace!("IPC: Getting Flight from registry with ID: {flight_id:?}");
+    let reg: MutexGuard<'_, Registry> = state.registry.lock().map_err(|e| e.to_string())?;
+    let entry: RegistryEntry = reg
+        .get(&flight_id)
+        .cloned()
+        .ok_or("Flight not found!".to_string())?;
+
+    let ctx: FlightContext = entry
+        .to_flight_context()
         .map_err(|e: FlightError| e.to_string())?;
 
+    trace!("IPC: FlightContext loaded for ID: {flight_id:?}; fetching metadata...");
     let metadata: Option<FlightMetadata> = ctx
         .get_flight_metadata(&flight_id)
         .map_err(|e: FlightError| e.to_string())?;
+    trace!("IPC: Metadata fetched: {metadata:?}");
 
     *state.flight.lock().unwrap() = Some(ctx);
     Ok(metadata)
@@ -258,6 +266,24 @@ fn set_widget_type(
     Ok(())
 }
 
+#[tauri::command(rename_all = "snake_case")]
+fn load_layout(state: State<AppData>, id: Uuid) -> Result<Tree, String> {
+    trace!("IPC: loading tree for Flight with ID: {id}...");
+    let mut flight_lock: MutexGuard<'_, Option<FlightContext>> =
+        state.flight.lock().map_err(|e| e.to_string())?;
+
+    let ctx: &mut FlightContext = flight_lock
+        .as_mut()
+        .ok_or("No Flight is open".to_string())?;
+
+    let tree: Result<Tree, String> = ctx.load_layout(id).map_err(|e| e.to_string());
+    match tree {
+        Ok(_) => trace!("IPC: tree loaded: {tree:?}"),
+        Err(_) => trace!("IPC: tree load failed: {tree:?}"),
+    }
+    tree
+}
+
 // ———————— Main ————————
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -280,6 +306,15 @@ pub fn run() {
             Ok(())
         })
         .plugin(tauri_plugin_opener::init())
+        .plugin(
+            tauri_plugin_log::Builder::new()
+                .targets([
+                    Target::new(TargetKind::Stdout),
+                    Target::new(TargetKind::LogDir { file_name: None }),
+                    Target::new(TargetKind::Webview),
+                ])
+                .build(),
+        )
         .invoke_handler(tauri::generate_handler![
             // Registry commands
             add_registry_flight,
@@ -299,6 +334,7 @@ pub fn run() {
             // Misc
             parse_tag,
             set_widget_type,
+            load_layout,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

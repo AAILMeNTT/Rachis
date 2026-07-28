@@ -640,10 +640,9 @@ impl FlightContext {
     ///
     /// # Returns
     ///
-    /// [`Ok(Some(Tree))`](Tree) - The loaded workspace tree, if one exists
-    /// `Ok(None)` - No workspace tree exists for the given ID
+    /// [`Ok(Tree)`](Tree) - The loaded workspace tree. Will be generated if no tree is found in the database.
     /// [`Err(FlightError)`](FlightError) - An error occurred while loading the layout
-    pub fn load_layout(&mut self, id: impl AsRef<Uuid>) -> Result<Option<Tree>, FlightError> {
+    pub fn load_layout(&mut self, id: impl AsRef<Uuid>) -> Result<Tree, FlightError> {
         let tree_json: Option<String> = {
             let db = self.db.lock().unwrap();
             let mut stmt =
@@ -652,10 +651,10 @@ impl FlightContext {
                 .ok()
         };
 
-        Ok(tree_json.map_or(None, |json| {
-            let tree: Tree = serde_json::from_str(&json).ok()?;
+        Ok(tree_json.map_or(Tree::default(), |json| {
+            let tree: Tree = serde_json::from_str(&json).unwrap_or_default();
             self.tree = Some(tree.clone());
-            Some(tree)
+            tree
         }))
     }
 

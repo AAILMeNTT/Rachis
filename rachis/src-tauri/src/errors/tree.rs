@@ -23,7 +23,7 @@ pub enum TreeError {
     NoChildren(TreeNode),
     WrongNodeKind {
         expected: String,
-        actual: String
+        actual: String,
     },
 }
 

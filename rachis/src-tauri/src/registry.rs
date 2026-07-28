@@ -4,6 +4,7 @@ use {
         finder::Finder,
     },
     chrono::{DateTime, Utc},
+    log::{debug, trace, warn},
     serde::{Deserialize, Serialize},
     std::{
         fs,
@@ -133,16 +134,19 @@ pub struct ReconcileReport {
 // #[allow(dead_code)]
 // TODO: Make some Registry error enums for better error handling
 impl Registry {
-    /// The current schema version. Increment if the serialized format changes.
+    /// The current schema version. Increment if the serialised format changes.
     const CURRENT_VERSION: usize = 1;
 
     /// Creates a new, empty Registry (in memory only).
     pub fn new() -> Self {
-        Self {
+        trace!("Creating empty Registry");
+        let registry: Self = Self {
             version: Self::CURRENT_VERSION,
             flights: Vec::new(),
             scan_paths: Vec::new(),
-        }
+        };
+        debug!("Created empty Registry: {registry:#?}");
+        registry
     }
 
     // ———————— Read Operations ————————
@@ -162,7 +166,14 @@ impl Registry {
     ///
     /// - `id`: [`impl AsRef<Uuid>`](Uuid) - The ID of the Flight to retrieve.
     pub fn get(&self, id: impl AsRef<Uuid>) -> Option<&RegistryEntry> {
-        self.list().iter().find(|entry| entry.id == *id.as_ref())
+        let result: Option<&RegistryEntry> = self.list().iter().find(|re| re.id == *id.as_ref());
+
+        match result {
+            Some(re) => trace!("Found Flight: {re:?}"),
+            None => trace!("No Flight found with ID: {}", id.as_ref()),
+        }
+
+        result
     }
 
     /// Returns a mutable reference to a specific Flight entry by ID.
@@ -171,9 +182,21 @@ impl Registry {
     ///
     /// - `id`: [`impl AsRef<Uuid>`](Uuid) - The ID of the Flight to retrieve.
     fn get_mut(&mut self, id: impl AsRef<Uuid>) -> Option<&mut RegistryEntry> {
-        self.list_mut()
+        let result: Option<&mut RegistryEntry> = self
+            .list_mut()
             .iter_mut()
-            .find(|entry| entry.id == *id.as_ref())
+            .find(|entry| entry.id == *id.as_ref());
+
+        match result {
+            Some(re) => {
+                trace!("Found Flight: {re:#?}");
+                Some(re)
+            }
+            None => {
+                trace!("No Flight found with ID: {}", id.as_ref());
+                None
+            }
+        }
     }
 
     /// Searches Flights by name (case-insensitive, partial match).
@@ -183,17 +206,30 @@ impl Registry {
     /// - `query`: [`impl AsRef<str>`](str) - The search query string.
     pub fn search_by_name(&self, query: impl AsRef<str>) -> Vec<&RegistryEntry> {
         let query: &str = query.as_ref();
-        self.list()
+        trace!("Searching by name using: {query:#?}");
+        let result: Vec<&RegistryEntry> = self
+            .list()
             .iter()
             .filter(|e| e.name.to_lowercase().contains(&query.to_lowercase()))
-            .collect()
+            .collect();
+        trace!("Found {} results: {result:#?}", result.len());
+        result
     }
 
     /// Returns the Flight that was most recently opened, if any.
     pub fn most_recent(&self) -> Option<&RegistryEntry> {
-        self.list()
+        trace!("Finding most recent Flight...");
+        let result = self
+            .list()
             .iter()
-            .max_by(|a, b| a.last_opened_at.cmp(&b.last_opened_at))
+            .max_by(|a, b| a.last_opened_at.cmp(&b.last_opened_at));
+
+        match result {
+            Some(re) => trace!("Found: {re:#?}"),
+            None => trace!("No recent Flights found."),
+        }
+
+        result
     }
 
     // ———————— Write Operations ————————
@@ -206,6 +242,7 @@ impl Registry {
     ///
     /// - `name`: [`impl AsRef<str>`](str) - The name of the Flight.
     /// - `path`: [`impl AsRef<str>`](str) - The path to the Flight's directory.
+    /// - `id`: [`impl AsRef<Uuid>`](Uuid) - The ID of the Flight.
     ///
     /// # Errors
     ///
@@ -221,22 +258,30 @@ impl Registry {
         id: impl AsRef<Uuid>,
     ) -> Result<RegistryEntry, String> {
         let (name, path, id) = (name.as_ref().trim(), path.as_ref().trim(), id.as_ref());
+        trace!("Attempting to add {name:#?} at {path:#?} with id: {id:#?}...");
 
         // Check for empty name/path
         if name.is_empty() {
+            warn!("Flight name must not be empty.");
             return Err("Flight name must not be empty.".into());
         }
         if path.is_empty() {
+            warn!("Flight path must not be empty.");
             return Err("Flight path must not be empty.".into());
         }
 
         // Check for duplicate id
         if self.list().iter().any(|e: &RegistryEntry| e.id == *id) {
+            warn!(
+                "A Flight already exists with id {id:#?}: {:#?}",
+                self.get(id).unwrap()
+            );
             return Err(format!("A Flight already exists with id: {id:#?}"));
         }
 
         // Check for duplicate path
         if self.list().iter().any(|e: &RegistryEntry| e.path == path) {
+            warn!("A Flight already exists at path {path:#?}");
             return Err(format!("A Flight already exists at path: {path:#?}"));
         }
 
@@ -246,6 +291,7 @@ impl Registry {
             .iter()
             .any(|p: &ScanPath| p.path.as_os_str() == path)
         {
+            trace!("Adding scan path: {path:#?}");
             self.scan_paths.push(ScanPath::new(path));
         }
 
@@ -261,7 +307,9 @@ impl Registry {
             word_count: 0,
         };
 
+        trace!("Successfully created entry: {entry:#?}");
         self.flights.push(entry.clone());
+        trace!("Successfully registered entry.");
         Ok(entry)
     }
 
@@ -610,6 +658,8 @@ impl Registry {
 
     // ———————— Validation ————————
 
+    // TODO: I really gotta make a RegistryError thing
+
     /// Checks the structural integrity of the registry.
     ///
     /// Checks:
@@ -620,8 +670,14 @@ impl Registry {
     /// - No duplicate IDs
     /// - No duplicate paths
     pub fn is_valid(&self) -> Result<(), String> {
+        trace!("Registry: validating registry...");
         // Check version
         if self.version == 0 || self.version > Self::CURRENT_VERSION {
+            warn!(
+                "Registry: unsupported version: {:#?}. Expected version {:#?}.",
+                self.version,
+                Self::CURRENT_VERSION
+            );
             return Err(format!(
                 "Unsupported registry version: {:#?}. Expected version {:#?}.",
                 self.version,
@@ -635,22 +691,26 @@ impl Registry {
         for entry in &self.flights {
             // UUID must be non-nil
             if entry.id.is_nil() {
+                warn!("Registry: found a Flight entry with a nil UUID.");
                 return Err("Found a Flight entry with a nil UUID.".into());
             }
 
             // No duplicate IDs
             if seen_ids.contains(&entry.id) {
+                warn!("Registry: found a duplicate Flight ID: {:#?}", entry.id);
                 return Err(format!("Duplicate Flight ID found: {:#?}", entry.id));
             }
             seen_ids.push(entry.id);
 
             // Name must be non-empty
             if entry.name.trim().is_empty() {
+                warn!("Registry: found a Flight entry with an empty name: {:#?}", entry.id);
                 return Err(format!("Flight {:#?} has an empty name.", entry.id));
             }
 
             // Path must be non-empty
             if entry.path.trim().is_empty() {
+                warn!("Registry: found a Flight entry with an empty path: {:#?}", entry.id);
                 return Err(format!(
                     "Flight {:#?} ({:#?}) has an empty path.",
                     entry.name, entry.id
@@ -659,6 +719,7 @@ impl Registry {
 
             // No duplicate paths
             if seen_paths.contains(&entry.path.as_str()) {
+                warn!("Registry: found a duplicate Flight path: {:#?}", entry.path);
                 return Err(format!(
                     "Duplicate path found for Flight {:#?} ({:#?}): {:#?}",
                     entry.name, entry.id, entry.path
@@ -667,6 +728,7 @@ impl Registry {
             seen_paths.push(&entry.path);
         }
 
+        trace!("Registry: successfully validated registry.");
         Ok(())
     }
 }
@@ -760,16 +822,18 @@ pub fn load_from_disk(dir: impl AsRef<Path>) -> Result<Registry, FlightError> {
 ///
 /// Returns an error if validation fails or the file cannot be written.
 pub fn save_to_disk(dir: impl AsRef<Path>, registry: &Registry) -> Result<bool, FlightError> {
+    trace!("Registry: attempting to save registry to disk...");
+
     // Validate before saving
     registry.is_valid().map_err(|e| FlightError::Custom(e))?;
 
     let path: PathBuf = dir.as_ref().join(REGISTRY_FILENAME);
     let content: String = serde_json::to_string_pretty(registry)
-        .map_err(|e| FlightError::Custom(format!("Failed to serialize registry: {e:#?}")))?;
+        .map_err(|e| FlightError::Custom(format!("Failed to serialise registry: {e:#?}")))?;
 
     fs::write(&path, &content).map_err(|e| FlightError::Io(e))?;
 
-    println!("Registry saved to: {path:#?}");
+    debug!("Registry saved to: {path:#?}");
     // im just now realising that returning a bool in a result is a little ridiculous
     Ok(true)
 }

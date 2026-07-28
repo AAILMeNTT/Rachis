@@ -1,7 +1,7 @@
 <script lang="ts">
     import type { Branch } from "$lib/types/Branch";
+    import WidgetShell from "$lib/components/widgets/WidgetShell.svelte";
     import BranchView from "$lib/components/workspace/BranchView.svelte";
-    import BaseWidget from "$lib/components/widgets/BaseWidget.svelte";
 
     interface Props {
         /** The container's body content */
@@ -18,7 +18,7 @@
             <BranchView branch={child.Branch} />
         {:else}
             <!-- Otherwise (it's a Leaf), render the Leaf -->
-            <BaseWidget leaf={child.Leaf} />
+            <WidgetShell leaf={child.Leaf} />
         {/if}
     {/each}
 </div>

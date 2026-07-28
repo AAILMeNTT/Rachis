@@ -6,6 +6,7 @@
     import { landingStore } from "$lib/stores/landing.svelte";
     import { dialogs } from "$lib/stores/dialog.svelte";
     import type { RegistryEntry } from "$lib/types/RegistryEntry";
+    import { trace } from "@tauri-apps/plugin-log";
 
     interface Props {
         /** The Flight to display */
@@ -50,6 +51,8 @@
 
     /** Navigates to the Flight's workspace when clicked */
     function handleClick(): void {
+        trace(`FlightCard: clicked on flight "${flight.name}"`);
+        trace(`FlightCard: going to workspace for flight "${flight.name}..."`);
         goto(`/workspace/${flight.id}`);
     }
 
