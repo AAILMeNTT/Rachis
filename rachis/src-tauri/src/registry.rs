@@ -704,13 +704,19 @@ impl Registry {
 
             // Name must be non-empty
             if entry.name.trim().is_empty() {
-                warn!("Registry: found a Flight entry with an empty name: {:#?}", entry.id);
+                warn!(
+                    "Registry: found a Flight entry with an empty name: {:#?}",
+                    entry.id
+                );
                 return Err(format!("Flight {:#?} has an empty name.", entry.id));
             }
 
             // Path must be non-empty
             if entry.path.trim().is_empty() {
-                warn!("Registry: found a Flight entry with an empty path: {:#?}", entry.id);
+                warn!(
+                    "Registry: found a Flight entry with an empty path: {:#?}",
+                    entry.id
+                );
                 return Err(format!(
                     "Flight {:#?} ({:#?}) has an empty path.",
                     entry.name, entry.id
