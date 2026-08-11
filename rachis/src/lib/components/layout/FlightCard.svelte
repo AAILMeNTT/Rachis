@@ -125,8 +125,8 @@
     <!-- //— Right content: action buttons —// -->
     <div
         class="right-content
-        w-auto h-auto flex flex-row flex-nowrap items-center
-        content-stretch justify-between gap-x-4"
+        w-auto h-auto flex flex-row flex-nowrap items-center content-stretch justify-between gap-x-4
+        *:cursor-pointer *:bg-none *:px-1 *:py-1 *:rounded-[5px] *:flex  *:flex-row *:items-center *:content-center"
         role="group"
         aria-label="Flight actions">
         <button

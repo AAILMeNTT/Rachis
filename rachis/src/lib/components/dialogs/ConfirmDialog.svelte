@@ -29,7 +29,8 @@
 </script>
 
 <div
-    class="dialog confirm-dialog"
+    class="dialog confirm-dialog
+    bg-white px-7 py-6 rounded-2xl min-w-90 max-w-120 shadow-[0_8px_32px_rgba(29,11,49,0.15)]"
     role="alertdialog"
     aria-labelledby="confirm-title"
     aria-describedby="confirm-message">
@@ -43,7 +44,9 @@
         {message}
     </p>
 
-    <div class="dialog-actions mt-6 flex justify-end gap-x-3">
+    <div class="dialog-actions
+    mt-6 flex justify-end gap-x-3
+    *:cursor-pointer *:px-5 *:py-2 *:rounded-[10px] *:text-sm *:font-medium *:border-none">
         <button
             class="btn btn-cancel"
             onclick={handleCancel}
@@ -61,26 +64,8 @@
 </div>
 
 <style>
-    .confirm-dialog {
-        background: white;
-        border-radius: 16px;
-        /* padding: 24px 28px */
-        padding-inline: 28px;
-        padding-block: 24px;
-        min-width: 360px;
-        max-width: 480px;
-        box-shadow: 0 8px 32px rgba(29, 11, 49, 0.15);
-    }
-
+    /* TODO: All this shit is gonna change cause i am gonna use really cool themes just you wait */
     .dialog-actions button {
-        cursor: pointer;
-        /*padding: 8px 20px;*/
-        padding-inline: 20px;
-        padding-block: 8px;
-        border-radius: 10px;
-        font-size: 14px;
-        font-weight: 500;
-        border: none;
         transition: all 0.15s;
     }
 
