@@ -8,7 +8,6 @@ pub struct ContentService {
     flight_dir: PathBuf,
 }
 
-#[allow(dead_code)]
 impl ContentService {
     /// Creates a new [`ContentService`] with the given Flight directory.
     ///
@@ -62,7 +61,8 @@ pub enum FileType {
     Markdown,
     Bbcode,
     Html,
-    Asciidoc,
+    AsciiDoc,
+    RichText,
 }
 
 impl FileType {
@@ -88,7 +88,8 @@ impl FileType {
             "md" => Some(FileType::Markdown),
             "bbcode" => Some(FileType::Bbcode),
             "html" => Some(FileType::Html),
-            "adoc" | "asciidoc" => Some(FileType::Asciidoc),
+            "adoc" | "asciidoc" => Some(FileType::AsciiDoc),
+            "rtf" => Some(FileType::RichText),
             _ => None,
         }
     }
@@ -96,11 +97,12 @@ impl FileType {
     /// Returns the file extension for this file type.
     pub fn as_ext(&self) -> &'static str {
         match self {
-            FileType::Rachis => ".rachis",
-            FileType::Markdown => ".md",
-            FileType::Bbcode => ".bbcode",
-            FileType::Html => ".html",
-            FileType::Asciidoc => ".adoc",
+            FileType::Rachis => "rachis",
+            FileType::Markdown => "md",
+            FileType::Bbcode => "bbcode",
+            FileType::Html => "html",
+            FileType::AsciiDoc => "adoc",
+            FileType::RichText => "rtf",
         }
     }
 }

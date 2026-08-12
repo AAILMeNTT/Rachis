@@ -7,7 +7,6 @@ use serde::{Deserialize, Serialize};
 
 /// The `workspace_layouts` model — saved workspace tree snapshots.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-#[allow(dead_code)]
 pub struct WorkspaceLayout {
     /// UUID identifying this layout (stored as TEXT)
     pub id: String,

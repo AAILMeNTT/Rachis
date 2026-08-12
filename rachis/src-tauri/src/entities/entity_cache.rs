@@ -7,7 +7,6 @@ use serde::{Deserialize, Serialize};
 
 /// The `entity_cache` model, storing cached parsed tag data.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-#[allow(dead_code)]
 pub struct EntityCache {
     /// UUID identifying this cached tag entry
     pub id: String,

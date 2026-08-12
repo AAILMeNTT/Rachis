@@ -113,7 +113,6 @@ pub enum TreeNode {
     Leaf(Leaf),
 }
 
-#[allow(dead_code)]
 impl TreeNode {
     pub fn is_branch(&self) -> bool {
         matches!(self, TreeNode::Branch(_))
@@ -259,7 +258,6 @@ pub struct Branch {
     pub ratios: Vec<u32>,
 }
 
-#[allow(dead_code)]
 impl Branch {
     /// Returns this Branch as a [`TreeNode::Branch`](TreeNode).
     pub fn as_node(&self) -> TreeNode {

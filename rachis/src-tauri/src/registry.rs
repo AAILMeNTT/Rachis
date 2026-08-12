@@ -131,7 +131,6 @@ pub struct ReconcileReport {
     pub status: ReconcileStatus,
 }
 
-// #[allow(dead_code)]
 // TODO: Make some Registry error enums for better error handling
 impl Registry {
     /// The current schema version. Increment if the serialised format changes.

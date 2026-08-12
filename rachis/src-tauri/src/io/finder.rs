@@ -47,7 +47,6 @@ impl Finder {
     }
 
     /// Skips hidden files.
-    #[allow(dead_code)]
     pub fn skip_hidden_files(&mut self) -> &mut Self {
         self.skip_hidden_files = Some(true);
         self
@@ -60,21 +59,18 @@ impl Finder {
     }
 
     /// Skips files.
-    #[allow(dead_code)]
     pub fn skip_files(&mut self) -> &mut Self {
         self.skip_files = Some(true);
         self
     }
 
     /// Skips directories.
-    #[allow(dead_code)]
     pub fn skip_dirs(&mut self) -> &mut Self {
         self.skip_dirs = Some(true);
         self
     }
 
     /// Excludes files matching the given pattern.
-    #[allow(dead_code)]
     pub fn exclude_pattern(&mut self, pattern: impl AsRef<str>) -> &mut Self {
         self.exclude_pattern =
             Some(Regex::new(pattern.as_ref()).expect("Invalid regex pattern for exclude_pattern!"));
@@ -82,7 +78,6 @@ impl Finder {
     }
 
     /// Includes files with the given extensions.
-    #[allow(dead_code)]
     pub fn extensions(
         &mut self,
         extensions: impl IntoIterator<Item = impl AsRef<str>>,
@@ -104,7 +99,6 @@ impl Finder {
     ///   `0` means only the root directory itself.
     ///   `1` means the root and its immediate children.
     ///   Default (unset) is unlimited.
-    #[allow(dead_code)]
     pub fn depth(&mut self, depth: usize) -> &mut Self {
         self.max_depth = Some(depth);
         self
@@ -114,7 +108,7 @@ impl Finder {
     pub fn find(&self) -> Result<FinderResult, WalkError> {
         let mut result: FinderResult = FinderResult::new();
 
-        let mut walker = WalkDir::new(&self.path);
+        let mut walker: WalkDir = WalkDir::new(&self.path);
         if let Some(depth) = self.max_depth {
             walker = walker.max_depth(depth);
         }
@@ -135,7 +129,6 @@ impl Finder {
     }
 
     /// Walks the directory tree and returns the first matching file path, or `None`.
-    #[allow(dead_code)]
     pub fn find_first(&self) -> Result<Option<PathBuf>, WalkError> {
         let mut walker = WalkDir::new(&self.path);
         if let Some(depth) = self.max_depth {
@@ -150,7 +143,6 @@ impl Finder {
             .map(|e| e.into_path()))
     }
 
-    #[allow(dead_code)]
     pub fn count(&self) -> Result<usize, WalkError> {
         let mut walker = WalkDir::new(&self.path);
         if let Some(depth) = self.max_depth {
@@ -212,7 +204,7 @@ impl Finder {
     /// Determines whether an entry should appear in the final result set.
     ///
     /// This is a post-walk filter that only affects what gets collected into
-    /// [`FinderResult`]. Primarily for `skip_dirs`, to allow directories to be
+    /// [`FinderResult`]. Primarily for `skip_dirs` to allow directories to be
     /// traversed to capture their files, yet excluded from the output.
     ///
     /// # Arguments
@@ -231,17 +223,14 @@ impl FinderResult {
         }
     }
 
-    #[allow(dead_code)]
     fn add_file(&mut self, path: impl AsRef<Path>) {
         self.files.push(path.as_ref().to_path_buf());
     }
 
-    #[allow(dead_code)]
     fn add_dir(&mut self, path: impl AsRef<Path>) {
         self.directories.push(path.as_ref().to_path_buf());
     }
 
-    #[allow(dead_code)]
     fn count(&self) -> usize {
         self.files.len() + self.directories.len()
     }

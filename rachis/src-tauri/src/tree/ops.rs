@@ -6,7 +6,6 @@ use {
     uuid::Uuid,
 };
 
-#[allow(dead_code)]
 impl Tree {
     /// Adds a child node to the tree at the specified index.
     ///

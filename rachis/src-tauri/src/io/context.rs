@@ -570,7 +570,7 @@ impl FlightContext {
         };
 
         // Derive filename
-        let filename: String = sanitize(title) + file_type.as_ext();
+        let filename: String = sanitize(title) + "." + file_type.as_ext();
 
         // Build the relative path
         let rel_path: PathBuf = PathBuf::from(subdir).join(filename);

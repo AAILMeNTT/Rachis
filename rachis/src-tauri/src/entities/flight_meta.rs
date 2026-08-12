@@ -32,7 +32,6 @@ pub struct FlightMetadata {
     pub files: Vec<ProjectFile>,
 }
 
-// #[allow(dead_code)]
 impl FlightMetadata {
     pub fn new(
         id: String,
